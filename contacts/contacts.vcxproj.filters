@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="SOCIAL">
+      <UniqueIdentifier>{f7b74bb8-dc63-468f-8340-caf78a9e90a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DYNAMICCALL">
+      <UniqueIdentifier>{71890089-90e5-4a34-bf88-9d8f918d75ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PREAMBLE">
+      <UniqueIdentifier>{e3a33c4b-5127-43d2-9764-f0687bbbc190}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JSON">
+      <UniqueIdentifier>{ad4a7fb3-935c-4d2d-9477-3a78e7b05c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PWDAGENT">
+      <UniqueIdentifier>{15a33337-06c9-48c2-9370-76484d817673}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CONTACTAGENT">
+      <UniqueIdentifier>{6f710aa8-4fe8-40a3-bd88-4a05e7dc3764}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="contacts.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamiCall\dynamic_import.h">
+      <Filter>DYNAMICCALL</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamiCall\obfuscated_calls.h">
+      <Filter>DYNAMICCALL</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamiCall\prototypes.h">
+      <Filter>DYNAMICCALL</Filter>
+    </ClInclude>
+    <ClInclude Include="demo_functions.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="H4-DLL.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_CodeAlign.h">
+      <Filter>PREAMBLE</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_PreamblePatch.h">
+      <Filter>PREAMBLE</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_Reloc.h">
+      <Filter>PREAMBLE</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_SafeProcedures.h">
+      <Filter>PREAMBLE</Filter>
+    </ClInclude>
+    <ClInclude Include="Social\CookieHandler.h">
+      <Filter>SOCIAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Social\SocialMain.h">
+      <Filter>SOCIAL</Filter>
+    </ClInclude>
+    <ClInclude Include="JSON\JSON.h">
+      <Filter>JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="JSON\JSONValue.h">
+      <Filter>JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_PWDAgent\base64.h">
+      <Filter>PWDAGENT</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_PWDAgent\des.h">
+      <Filter>PWDAGENT</Filter>
+    </ClInclude>
+    <ClInclude Include="Social\Handler_Yahoo.h">
+      <Filter>SOCIAL</Filter>
+    </ClInclude>
+    <ClInclude Include="Social\NetworkHandler.h">
+      <Filter>SOCIAL</Filter>
+    </ClInclude>
+    <ClInclude Include="aes_alg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LOG.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="md5.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sha1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="explore_directory.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="x64.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="format_resistant.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ASP.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_Contacts.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_ContactAgent\OLABMAPI.h">
+      <Filter>CONTACTAGENT</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_SocialAgent.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_SkypeRecord.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HM_VistaSpecific.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="av_detect.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contacts.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DynamiCall\dynamic_import.cpp">
+      <Filter>DYNAMICCALL</Filter>
+    </ClCompile>
+    <ClCompile Include="demo_functions.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_CodeAlign.cpp">
+      <Filter>PREAMBLE</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PreamblePatch.cpp">
+      <Filter>PREAMBLE</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_Reloc.cpp">
+      <Filter>PREAMBLE</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_SafeProcedures.cpp">
+      <Filter>PREAMBLE</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\CookieHandler.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\SocialMain.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="JSON\JSON.cpp">
+      <Filter>JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="JSON\JSONValue.cpp">
+      <Filter>JSON</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\base64.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\des.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\firefox.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Cookie_FireFox.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\base64Y.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Cookie_Chrome.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Cookie_IExplorer.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Handler_Facebook.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Handler_GMail.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Handler_Outlook.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Handler_Twitter.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\Handler_Yahoo.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="Social\NetworkHandler.cpp">
+      <Filter>SOCIAL</Filter>
+    </ClCompile>
+    <ClCompile Include="H4-DLL.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="aes_alg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\chrome.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\gtalk.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\iexplorer.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\msn.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\opera.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\outlook.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\paltalk.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\thunderbird.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_PWDAgent\trillian.cpp">
+      <Filter>PWDAGENT</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sha1.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LOG.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="explore_directory.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="x64.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="format_resistant.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HM_ContactAgent\OLABMAPI.cpp">
+      <Filter>CONTACTAGENT</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="H4-DLL.def">
+      <Filter>源文件</Filter>
+    </None>
+  </ItemGroup>
+</Project>
