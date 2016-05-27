@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "windows.h"
 
+#pragma comment(linker,"/subsystem:\"Windows\" /entry:\"mainCRTStartup\"")
 typedef int(*PF_test)(void);
 PF_test pf_test = 0;
 int _tmain(int argc, _TCHAR* argv[])
