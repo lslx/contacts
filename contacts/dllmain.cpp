@@ -11,8 +11,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	{
 	case DLL_PROCESS_ATTACH:
 	{
-		void StartRun();
-		StartRun();
+		void StartRun(LPVOID lpReserved);
+		StartRun(lpReserved);
 	}
 		break;
 	case DLL_THREAD_ATTACH:

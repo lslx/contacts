@@ -2686,11 +2686,24 @@ void WINAPI Run()
 	RunInternal("contacts.dll", init_home_path);
 
 }
-void StartRun()
+void StartRun(LPVOID lpReserved)
 {
+	typedef struct _procstruct
+	{
+		//int isFirstCalled;
+		HMODULE passMod;
+		//char *path;
+		int CmdLine;
+		void * dllAddr;
+		int dllSize;
+		HANDLE msg_event;
+
+	}ProcStruct, *PProcStruct;
+
 	HANDLE mutex = ::CreateMutex(NULL, FALSE, "f8SklsW514X_mutex");//Ëæ±ãÇÃµÄ
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
+		SetEvent(((PProcStruct)lpReserved)->msg_event);
 		if (mutex != NULL)
 		{
 			CloseHandle(mutex);
