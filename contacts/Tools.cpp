@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <Shlwapi.h>
 #include <regex>
+#include <stdio.h>
 
 
 #if 0
@@ -542,3 +543,107 @@ char instbyte[] =
 // #pragma comment (linker,"/merge:.data=.code")
 // #pragma code_seg(".code")
 
+// --
+
+void* ReadLibrary(long *pSize, char* fileName) {
+	long read;
+	void* result;
+	FILE* fp;
+
+	fp = fopen(fileName, "rb");
+	if (fp == NULL)
+	{
+		//printf(_T("Can't open DLL file \"%s\"."), fileName);
+		return NULL;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	*pSize = ftell(fp);
+	if (*pSize < 0)
+	{
+		fclose(fp);
+		return NULL;
+	}
+
+	result = (unsigned char *)malloc(*pSize);
+	if (result == NULL)
+	{
+		return NULL;
+	}
+
+	fseek(fp, 0, SEEK_SET);
+	read = fread(result, 1, *pSize, fp);
+	fclose(fp);
+	if (read != static_cast<size_t>(*pSize))
+	{
+		free(result);
+		return NULL;
+	}
+
+	return result;
+}
+bool WriteFileOver(char* pBuf, long size, char* fileName) {
+	long read;
+	FILE* fp;
+
+	fp = fopen(fileName, "wb");
+	if (fp == false)
+	{
+		//printf("Can't open file \"%s\".", fileName);
+		return false;
+	}
+
+	fseek(fp, 0, SEEK_SET);
+	//long old_size = ftell(fp);
+	long write_size = fwrite(pBuf, sizeof(char), sizeof(char)*size, fp);
+	//long old_size = ftell(fp);
+	fclose(fp);
+	if (write_size != static_cast<size_t>(size))
+	{
+		return false;
+	}
+
+	return true;
+}
+bool WriteFileAdd(char* pBuf, long size, char* fileName) {
+	long read;
+	FILE* fp;
+
+	fp = fopen(fileName, "a+");
+	if (fp == false)
+	{
+		//printf(_T("Can't open file \"%s\"."), fileName);
+		return false;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	//long old_size = ftell(fp);
+	long write_size = fwrite(pBuf, sizeof(char), sizeof(char)*size, fp);
+	//long old_size = ftell(fp);
+	fclose(fp);
+	if (write_size != static_cast<size_t>(size))
+	{
+		return false;
+	}
+
+	return true;
+}
+void* File2Buffer(long* pSize, const char* strPath)
+{
+	HANDLE hFile = ::CreateFileA(strPath, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD nFileSize = ::GetFileSize(hFile, NULL);
+		char* lpBuffer = (char *)LocalAlloc(LPTR, nFileSize);
+		DWORD nNumberOfBytesRead;
+		BOOL bRet = ::ReadFile(hFile, lpBuffer, nFileSize, &nNumberOfBytesRead, NULL);// use a loop ?
+		if (nFileSize != nNumberOfBytesRead){
+			DebugBreak();
+			return 0;
+		}
+		*pSize = nFileSize;
+		CloseHandle(hFile);
+		return lpBuffer;
+	}
+	return 0;
+}
