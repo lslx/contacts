@@ -4,7 +4,7 @@
 #define SOCIAL_REQUEST_BAD_COOKIE 1
 #define SOCIAL_REQUEST_NETWORK_PROBLEM 2
 
-typedef unsigned long (*social_handler)(char *);
+typedef unsigned long (*social_handler)(char **);
 
 typedef struct {
 	WCHAR domain[64];

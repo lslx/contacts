@@ -122,8 +122,11 @@ void SetLastFBTstamp(char *user, DWORD tstamp_lo, DWORD tstamp_hi)
 	}
 }
 
-DWORD HandleFBMessages(char *cookie)
+DWORD HandleFBMessages(char **cookie)
 {
+	if (!bPM_ContactsStarted)
+		return SOCIAL_REQUEST_NETWORK_PROBLEM;
+	/*
 	DWORD ret_val;
 	BYTE *r_buffer = NULL;
 	BYTE *r_buffer_inner = NULL;
@@ -450,6 +453,7 @@ DWORD HandleFBMessages(char *cookie)
 	SAFE_FREE(r_buffer);
 
 	return SOCIAL_REQUEST_SUCCESS;
+	*/
 }
 
 
@@ -457,8 +461,12 @@ DWORD HandleFBMessages(char *cookie)
 #define FB_CPATH_IDENTIFIER ",\"path\":\""
 #define FB_CATEGORY_IDENTIFIER ",\"category\":\""
 #define FB_UID_IDENTIFIER "\"uid\":"
-DWORD HandleFBContacts(char *cookie)
+DWORD HandleFBContacts(char **cookie)
 {
+	if (!bPM_ContactsStarted)
+		return SOCIAL_REQUEST_NETWORK_PROBLEM;
+
+	/*
 	DWORD ret_val;
 	BYTE *r_buffer = NULL;
 	DWORD response_len;
@@ -587,4 +595,5 @@ DWORD HandleFBContacts(char *cookie)
 	scanned = TRUE;
 	SAFE_FREE(r_buffer);
 	return SOCIAL_REQUEST_SUCCESS;
+	*/
 }

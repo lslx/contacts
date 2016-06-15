@@ -60,7 +60,7 @@ void ParseIECookieFile(WCHAR *file)
 		ptr+=2;
 		NormalizeDomainA(host);
 		if (host && name && value && IsInterestingDomainA(host))
-			AddCookieA(host, name, value);
+			AddCookieA(host, name, value, COOKIE_FROM_IE);
 	} 
 	SAFE_FREE(session_memory);
 }
@@ -94,7 +94,7 @@ void ParseSessionCookies(char *cookie_string, char *domain)
 		if (ptr3) {
 			*ptr3 = NULL;
 			ptr3++;
-			AddCookieA(domain, ptr1, ptr3);
+			AddCookieA(domain, ptr1, ptr3, COOKIE_FROM_IE);
 		}
 
 		ptr1 = ptr2;
