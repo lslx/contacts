@@ -45,6 +45,6 @@ typedef struct _FileAdditionalData {
 } FileAdditionalData, *pFileAdditionalData;
 
 //add by fhc
-extern HANDLE Log_CreateFile2(DWORD, BYTE *, DWORD,BOOL);
+extern HANDLE Log_CreateFile2(DWORD,char*, BYTE *, DWORD,BOOL);
 extern void Log_CloseFile2(HANDLE);
 extern BOOL Log_WriteFile2(HANDLE, BYTE *, DWORD);

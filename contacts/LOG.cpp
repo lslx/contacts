@@ -658,7 +658,7 @@ HANDLE Log_CreateFile(DWORD agent_tag, BYTE *additional_header, DWORD additional
 
 	return hfile;
 }
-HANDLE Log_CreateFile2(DWORD agent_tag, BYTE *additional_header, DWORD additional_len, BOOL is_incoming)
+HANDLE Log_CreateFile2(DWORD agent_tag, char* FileNameTag, BYTE *additional_header, DWORD additional_len, BOOL is_incoming)
 {
 	char log_wout_path[128];
 	char file_name[DLLNAMELEN];
@@ -673,15 +673,20 @@ HANDLE Log_CreateFile2(DWORD agent_tag, BYTE *additional_header, DWORD additiona
 	char szLogFileNameFormat[256] = {0};
 	if (PM_CONTACTSAGENT == agent_tag){
 		strcat(szLogFileNameFormat, "%s\\");//add sub path for mail contacts dir
+		strcat(szLogFileNameFormat, FileNameTag);
 		strcat(szLogFileNameFormat, "contacts_");//add sub path for mail contacts dir
 		strcat(szLogFileNameFormat, "%.1XLOGF%.4X%.8X%.8X.log");
 	}else if(PM_MAILAGENT == agent_tag)
 	{
 		strcat(szLogFileNameFormat, "%s\\");//add sub path for mail save dir
-		if (is_incoming)
+		if (is_incoming){
+			strcat(szLogFileNameFormat, FileNameTag);
 			strcat(szLogFileNameFormat, "mail_in_");
-		else
+		}
+		else{
+			strcat(szLogFileNameFormat, FileNameTag);
 			strcat(szLogFileNameFormat, "mail_out_");
+		}
 		strcat(szLogFileNameFormat, "%.1XLOGF%.4X%.8X%.8X.eml");
 	}
 

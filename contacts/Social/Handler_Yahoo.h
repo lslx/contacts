@@ -141,7 +141,7 @@ DWORD	YHFreeContactFields(LPYAHOO_CONTACT_VALUES pFields);
 DWORD	YHFreeMailFields(LPYAHOO_MAIL_FIELDS pYHMailFields);
 void	YHGetBoundaryValue(LPWSTR strHeader, LPWSTR * strBoundary);
 DWORD	YHGetChat(LPYAHOO_CHAT_FIELDS lpChatFields, LPSTR strMailID, LPYAHOO_CONNECTION_PARAMS lpYHParams, LPSTR strCookie);
-DWORD	YHGetConnectionParams(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strCookie);
+DWORD	YHGetConnectionParams(LPYAHOO_CONNECTION_PARAMS pYHParams, char** strCookie, int& good_cookie_index);
 DWORD	YHGetFoldersName(JSONValue** jValue, LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strCookie);
 DWORD	YHGetLastTimeStamp(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR pstrName);
 DWORD	YHGetMail(LPSTR* strMail, LPSTR strMailID, LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strCookie);
@@ -155,7 +155,7 @@ BOOL	YHParseForParams(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR strBuffer);
 DWORD	YHSetLastTimeStamp(LPYAHOO_CONNECTION_PARAMS pYHParams, LPSTR pstrName);
 
 //social handlers
-DWORD	YahooMessageHandler(LPSTR strCookie);
-DWORD	YahooContactHandler(LPSTR strCookie);
+DWORD	YahooMessageHandler(char** strCookie);
+DWORD	YahooContactHandler(char** strCookie);
 
 #endif _YAHOO_H
